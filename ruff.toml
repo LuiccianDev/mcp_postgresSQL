@@ -1,0 +1,48 @@
+# ==============================
+# Configuración principal Ruff
+# ==============================
+line-length = 88
+target-version = "py313"
+
+[lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort (ordenar imports)
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+    "N",  # pep8-naming
+    "S",  # bandit
+]
+ignore = [
+    "W291",  # trailing whitespace
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+    "S101",  # use of assert detected (pytest uses assert)
+    "S110",  # raise exception in __init__
+    "S112",  # use of assert (pytest)
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["S101", "S106", "S108"]
+
+# ==============================
+# Configuración de isort dentro de Ruff
+# ==============================
+[lint.isort]
+known-first-party = ["src"]   # Código propio
+combine-as-imports = true     # Une imports con "as"
+order-by-type = true          # Ordena por tipo de import
+case-sensitive = false        # Orden insensible a mayúsculas
+lines-after-imports = 2       # Línea extra tras imports
+
+# ==============================
+# Configuración de formateo
+# ==============================
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+skip-magic-trailing-comma = false
