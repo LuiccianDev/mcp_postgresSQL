@@ -83,12 +83,12 @@ async def insert_data(table_name: str, data: dict, ctx: Context) -> dict:
     """Insertar un registro en tabla"""
 
 @mcp.tool()
-async def update_data(table_name: str, data: dict, where_clause: str, params: list, ctx: Context) -> dict:
-    """Actualizar registros con condición"""
+async def update_data(table_name: str, data: dict, where: dict, ctx: Context) -> dict:
+    """Actualizar registros usando un diccionario de condiciones para el WHERE (ej: {'id': 5, 'status': 'active'})."""
 
 @mcp.tool()
-async def delete_data(table_name: str, where_clause: str, params: list, ctx: Context) -> dict:
-    """Eliminar registros con condición"""
+async def delete_data(table_name: str, where: dict, ctx: Context) -> dict:
+    """Eliminar registros usando un diccionario de condiciones para el WHERE."""
 
 @mcp.tool()
 async def bulk_insert(table_name: str, data_list: list, ctx: Context) -> dict:
@@ -108,8 +108,8 @@ async def get_referenced_tables(table_name: str, ctx: Context) -> dict:
     """Obtener tablas que referencian a esta tabla"""
 
 @mcp.tool()
-async def generate_join_query(tables: list, join_conditions: list, ctx: Context) -> dict:
-    """Generar query con JOINs automáticos"""
+async def generate_join_query(tables: list, join_type: str = "INNER", ctx: Context) -> dict:
+    """Generar query con JOINs, infiriendo las condiciones desde las Foreign Keys del esquema."""
 
 ```
 
@@ -134,12 +134,12 @@ async def get_table_statistics(table_name: str, ctx: Context) -> dict:
 
 ```python
 @mcp.tool()
-async def export_table_csv(table_name: str, file_path: str, ctx: Context) -> dict:
-    """Exportar tabla a CSV"""
+async def export_table_csv(table_name: str, file_path: str, query: str = None, delimiter: str = ",", ctx: Context) -> dict:
+    """Exportar tabla o resultado de un query a CSV. Permite especificar un query para exportaciones parciales."""
 
 @mcp.tool()
-async def import_csv_to_table(table_name: str, file_path: str, ctx: Context) -> dict:
-    """Importar CSV a tabla existente"""
+async def import_csv_to_table(table_name: str, file_path: str, delimiter: str = ",", header: bool = True, ctx: Context) -> dict:
+    """Importar CSV a tabla, especificando si tiene cabecera y cuál es el delimitador."""
 
 @mcp.tool()
 async def create_table_backup(table_name: str, backup_name: str, ctx: Context) -> dict:
