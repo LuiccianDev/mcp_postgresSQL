@@ -110,22 +110,34 @@ class ConnectionManager:
 
     @overload
     async def execute_query(
-        self, query: str, parameters: list[Any] | None = None, fetch_mode: Literal["all"] = "all"
+        self,
+        query: str,
+        parameters: list[Any] | None = None,
+        fetch_mode: Literal["all"] = "all",
     ) -> list[Record]: ...
 
     @overload
     async def execute_query(
-        self, query: str, parameters: list[Any] | None = None, fetch_mode: Literal["one"] = "one"
+        self,
+        query: str,
+        parameters: list[Any] | None = None,
+        fetch_mode: Literal["one"] = "one",
     ) -> Record | None: ...
 
     @overload
     async def execute_query(
-        self, query: str, parameters: list[Any] | None = None, fetch_mode: Literal["val"] = "val"
+        self,
+        query: str,
+        parameters: list[Any] | None = None,
+        fetch_mode: Literal["val"] = "val",
     ) -> int | float | str | None: ...
 
     @overload
     async def execute_query(
-        self, query: str, parameters: list[Any] | None = None, fetch_mode: Literal["none"] = "none"
+        self,
+        query: str,
+        parameters: list[Any] | None = None,
+        fetch_mode: Literal["none"] = "none",
     ) -> str: ...
 
     async def execute_query(

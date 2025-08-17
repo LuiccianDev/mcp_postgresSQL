@@ -94,7 +94,9 @@ async def get_database_info() -> dict[str, Any]:
             current_conn_query, fetch_mode="val"
         )
 
-        current_conn_result = current_conn_result if current_conn_result is not None else 0
+        current_conn_result = (
+            current_conn_result if current_conn_result is not None else 0
+        )
 
         # Query for database statistics
         stats_query = """
@@ -140,7 +142,12 @@ async def get_database_info() -> dict[str, Any]:
             ),
             "statistics": serialize_dict(dict(stats_result)),
             "cache_hit_ratio": round(
-                (stats_result["blocks_hit"] / max(stats_result["blocks_hit"] + stats_result["blocks_read"], 1)) * 100, 2
+                (
+                    stats_result["blocks_hit"]
+                    / max(stats_result["blocks_hit"] + stats_result["blocks_read"], 1)
+                )
+                * 100,
+                2,
             ),
             "execution_time_ms": round(execution_time * 1000, 2),
         }
@@ -148,8 +155,7 @@ async def get_database_info() -> dict[str, Any]:
         logger.info(f"Database info retrieved successfully in {execution_time:.3f}s")
 
         return format_success_response(
-            data=database_info,
-            message="Database information retrieved successfully"
+            data=database_info, message="Database information retrieved successfully"
         )
 
     except Exception as e:
@@ -310,21 +316,26 @@ async def monitor_connections() -> dict[str, Any]:
             "connection_count": len(formatted_connections),
             "summary_by_state": formatted_summary,
             "long_running_queries": formatted_long_queries,
-            "blocked_queries": [serialize_dict(dict(bq)) for bq in blocked_queries_result],
-            "active_connections": sum(1 for conn in connections_result if conn["is_active"]),
+            "blocked_queries": [
+                serialize_dict(dict(bq)) for bq in blocked_queries_result
+            ],
+            "active_connections": sum(
+                1 for conn in connections_result if conn["is_active"]
+            ),
             "execution_time_ms": round(execution_time * 1000, 2),
             "metadata": {
                 "has_long_queries": len(long_queries_result) > 0,
                 "has_blocked_queries": len(blocked_queries_result) > 0,
                 "monitoring_timestamp": time.time(),
-            }
+            },
         }
 
-        logger.info(f"Connection monitoring completed successfully in {execution_time:.3f}s")
+        logger.info(
+            f"Connection monitoring completed successfully in {execution_time:.3f}s"
+        )
 
         return format_success_response(
-            data=monitoring_data,
-            message="Connection monitoring completed successfully"
+            data=monitoring_data, message="Connection monitoring completed successfully"
         )
 
     except Exception as e:
@@ -335,7 +346,9 @@ async def monitor_connections() -> dict[str, Any]:
         )
 
 
-async def vacuum_table(table_name: str, analyze: bool = True, full: bool = False) -> dict[str, Any]:
+async def vacuum_table(
+    table_name: str, analyze: bool = True, full: bool = False
+) -> dict[str, Any]:
     """Perform VACUUM operation on a table for maintenance.
 
     This tool executes VACUUM on the specified table to reclaim storage space
@@ -401,9 +414,13 @@ async def vacuum_table(table_name: str, analyze: bool = True, full: bool = False
         # Security validation for the vacuum command
         is_valid, error_msg = validate_query_permissions(vacuum_command)
         if not is_valid:
-            raise SecurityError(f"Vacuum operation security validation failed: {error_msg}")
+            raise SecurityError(
+                f"Vacuum operation security validation failed: {error_msg}"
+            )
 
-        logger.info(f"Starting vacuum operation on table '{table_name}': {vacuum_command}")
+        logger.info(
+            f"Starting vacuum operation on table '{table_name}': {vacuum_command}"
+        )
 
         # Execute vacuum (this is a maintenance command, so fetch_mode="none")
         vacuum_result = await connection_manager.execute_raw_query(
@@ -461,10 +478,14 @@ async def vacuum_table(table_name: str, analyze: bool = True, full: bool = False
             "space_reclaimed_human": format_bytes(abs(space_reclaimed)),
             "space_reclaimed_percent": round(
                 (space_reclaimed / max(int(size_before), 1)) * 100, 2
-            ) if size_before else 0,
+            )
+            if size_before
+            else 0,
             "execution_time_ms": round(execution_time * 1000, 2),
             "execution_time_human": format_duration(execution_time),
-            "table_statistics": serialize_dict(dict(stats_result)) if stats_result else None,
+            "table_statistics": serialize_dict(dict(stats_result))
+            if stats_result
+            else None,
         }
 
         logger.info(
@@ -473,7 +494,7 @@ async def vacuum_table(table_name: str, analyze: bool = True, full: bool = False
 
         return format_success_response(
             data=vacuum_data,
-            message=f"Vacuum operation completed successfully on table '{table_name}'"
+            message=f"Vacuum operation completed successfully on table '{table_name}'",
         )
 
     except (ValidationError, SecurityError) as e:
@@ -488,7 +509,9 @@ async def vacuum_table(table_name: str, analyze: bool = True, full: bool = False
         )
 
 
-async def reindex_table(table_name: str, index_name: str | None = None) -> dict[str, Any]:
+async def reindex_table(
+    table_name: str, index_name: str | None = None
+) -> dict[str, Any]:
     """Rebuild indexes for a table or specific index.
 
     This tool rebuilds indexes to improve query performance and reclaim space
@@ -553,7 +576,9 @@ async def reindex_table(table_name: str, index_name: str | None = None) -> dict[
             )
 
             if not index_exists:
-                raise ValidationError(f"Index '{index_name}' does not exist on table '{table_name}'")
+                raise ValidationError(
+                    f"Index '{index_name}' does not exist on table '{table_name}'"
+                )
 
         # Get index information before reindex
         indexes_query = """
@@ -584,7 +609,9 @@ async def reindex_table(table_name: str, index_name: str | None = None) -> dict[
         # Security validation
         is_valid, error_msg = validate_query_permissions(reindex_command)
         if not is_valid:
-            raise SecurityError(f"Reindex operation security validation failed: {error_msg}")
+            raise SecurityError(
+                f"Reindex operation security validation failed: {error_msg}"
+            )
 
         logger.info(f"Starting reindex operation: {reindex_command}")
 
@@ -628,7 +655,9 @@ async def reindex_table(table_name: str, index_name: str | None = None) -> dict[
             "size_change_human": format_bytes(abs(size_change)),
             "size_change_percent": round(
                 (size_change / max(total_size_before, 1)) * 100, 2
-            ) if total_size_before else 0,
+            )
+            if total_size_before
+            else 0,
             "execution_time_ms": round(execution_time * 1000, 2),
             "execution_time_human": format_duration(execution_time),
             "indexes_before": formatted_indexes_before,
@@ -640,8 +669,7 @@ async def reindex_table(table_name: str, index_name: str | None = None) -> dict[
         )
 
         return format_success_response(
-            data=reindex_data,
-            message="Reindex operation completed successfully"
+            data=reindex_data, message="Reindex operation completed successfully"
         )
 
     except (ValidationError, SecurityError) as e:

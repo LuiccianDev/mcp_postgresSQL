@@ -24,18 +24,20 @@ def parse_connection_string(connection_string: str) -> dict[str, Any]:
     Raises:
         ValueError: If connection string format is invalid
     """
-    if not connection_string.startswith(('postgresql://', 'postgres://')):
-        raise ValueError("Connection string must start with postgresql:// or postgres://")
+    if not connection_string.startswith(("postgresql://", "postgres://")):
+        raise ValueError(
+            "Connection string must start with postgresql:// or postgres://"
+        )
 
     try:
         parsed = urlparse(connection_string)
 
         params = {
-            'host': parsed.hostname or 'localhost',
-            'port': parsed.port or 5432,
-            'database': parsed.path.lstrip('/') if parsed.path else '',
-            'user': parsed.username or '',
-            'password': parsed.password or ''
+            "host": parsed.hostname or "localhost",
+            "port": parsed.port or 5432,
+            "database": parsed.path.lstrip("/") if parsed.path else "",
+            "user": parsed.username or "",
+            "password": parsed.password or "",
         }
 
         # Parse query parameters
@@ -51,12 +53,9 @@ def parse_connection_string(connection_string: str) -> dict[str, Any]:
         raise ValueError(f"Invalid connection string format: {e}") from e
 
 
-def build_connection_string(host: str,
-                          port: int,
-                          database: str,
-                          user: str,
-                          password: str,
-                          **kwargs: Any) -> str:
+def build_connection_string(
+    host: str, port: int, database: str, user: str, password: str, **kwargs: Any
+) -> str:
     """Build PostgreSQL connection string from components.
 
     Args:
@@ -94,11 +93,11 @@ def extract_table_names(query: str) -> list[str]:
     """
     # Simple regex-based extraction (not perfect but covers common cases)
     table_patterns = [
-        r'\bFROM\s+([a-zA-Z_][a-zA-Z0-9_]*)',
-        r'\bJOIN\s+([a-zA-Z_][a-zA-Z0-9_]*)',
-        r'\bINTO\s+([a-zA-Z_][a-zA-Z0-9_]*)',
-        r'\bUPDATE\s+([a-zA-Z_][a-zA-Z0-9_]*)',
-        r'\bDELETE\s+FROM\s+([a-zA-Z_][a-zA-Z0-9_]*)'
+        r"\bFROM\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+        r"\bJOIN\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+        r"\bINTO\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+        r"\bUPDATE\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+        r"\bDELETE\s+FROM\s+([a-zA-Z_][a-zA-Z0-9_]*)",
     ]
 
     tables = set()
@@ -122,7 +121,7 @@ def generate_query_hash(query: str, parameters: list[Any] | None = None) -> str:
         SHA-256 hash of query and parameters
     """
     # Normalize query (remove extra whitespace)
-    normalized_query = ' '.join(query.split())
+    normalized_query = " ".join(query.split())
 
     # Create hash input
     hash_input = normalized_query
@@ -131,7 +130,7 @@ def generate_query_hash(query: str, parameters: list[Any] | None = None) -> str:
         param_str = json.dumps(parameters, sort_keys=True, default=str)
         hash_input += param_str
 
-    return hashlib.sha256(hash_input.encode('utf-8')).hexdigest()
+    return hashlib.sha256(hash_input.encode("utf-8")).hexdigest()
 
 
 def chunk_list(items: list[Any], chunk_size: int) -> list[list[Any]]:
@@ -149,14 +148,14 @@ def chunk_list(items: list[Any], chunk_size: int) -> list[list[Any]]:
 
     chunks = []
     for i in range(0, len(items), chunk_size):
-        chunks.append(items[i:i + chunk_size])
+        chunks.append(items[i : i + chunk_size])
 
     return chunks
 
 
-def flatten_dict(data: dict[str, Any],
-                separator: str = '.',
-                prefix: str = '') -> dict[str, Any]:
+def flatten_dict(
+    data: dict[str, Any], separator: str = ".", prefix: str = ""
+) -> dict[str, Any]:
     """Flatten nested dictionary structure.
 
     Args:
@@ -221,7 +220,7 @@ def safe_cast(value: Any, target_type: type, default: Any = None) -> Any:
     try:
         if target_type is bool and isinstance(value, str):
             # Special handling for boolean strings
-            return value.lower() in ('true', '1', 'yes', 'on')
+            return value.lower() in ("true", "1", "yes", "on")
         return target_type(value)
     except (ValueError, TypeError):
         return default
@@ -262,11 +261,11 @@ def calculate_similarity(str1: str, str2: str) -> float:
 
     for i in range(1, len1 + 1):
         for j in range(1, len2 + 1):
-            cost = 0 if str1[i-1] == str2[j-1] else 1
+            cost = 0 if str1[i - 1] == str2[j - 1] else 1
             matrix[i][j] = min(
-                matrix[i-1][j] + 1,      # deletion
-                matrix[i][j-1] + 1,      # insertion
-                matrix[i-1][j-1] + cost  # substitution
+                matrix[i - 1][j] + 1,  # deletion
+                matrix[i][j - 1] + 1,  # insertion
+                matrix[i - 1][j - 1] + cost,  # substitution
             )
 
     max_len = max(len1, len2)
@@ -288,15 +287,24 @@ def extract_sql_operation(query: str) -> str:
 
     # Common SQL operations
     operations = [
-        'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP',
-        'ALTER', 'TRUNCATE', 'GRANT', 'REVOKE', 'WITH'
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE",
+        "CREATE",
+        "DROP",
+        "ALTER",
+        "TRUNCATE",
+        "GRANT",
+        "REVOKE",
+        "WITH",
     ]
 
     for operation in operations:
         if query_stripped.startswith(operation):
             return operation
 
-    return 'UNKNOWN'
+    return "UNKNOWN"
 
 
 def is_read_only_query(query: str) -> bool:
@@ -309,7 +317,7 @@ def is_read_only_query(query: str) -> bool:
         True if query is read-only
     """
     operation = extract_sql_operation(query)
-    read_only_operations = {'SELECT', 'WITH', 'EXPLAIN', 'SHOW', 'DESCRIBE'}
+    read_only_operations = {"SELECT", "WITH", "EXPLAIN", "SHOW", "DESCRIBE"}
 
     return operation in read_only_operations
 
@@ -324,11 +332,11 @@ def sanitize_identifier(identifier: str) -> str:
         Sanitized identifier
     """
     # Remove non-alphanumeric characters except underscores
-    sanitized = re.sub(r'[^a-zA-Z0-9_]', '', identifier)
+    sanitized = re.sub(r"[^a-zA-Z0-9_]", "", identifier)
 
     # Ensure it starts with letter or underscore
-    if sanitized and not sanitized[0].isalpha() and sanitized[0] != '_':
-        sanitized = '_' + sanitized
+    if sanitized and not sanitized[0].isalpha() and sanitized[0] != "_":
+        sanitized = "_" + sanitized
 
     # Limit length
     return sanitized[:63]  # PostgreSQL identifier limit
@@ -344,20 +352,17 @@ def format_sql_query(query: str) -> str:
         Formatted SQL query
     """
     # Basic formatting - add line breaks after major keywords
-    keywords = ['SELECT', 'FROM', 'WHERE', 'GROUP BY', 'HAVING', 'ORDER BY', 'LIMIT']
+    keywords = ["SELECT", "FROM", "WHERE", "GROUP BY", "HAVING", "ORDER BY", "LIMIT"]
 
     formatted = query
     for keyword in keywords:
         formatted = re.sub(
-            f'\\b{keyword}\\b',
-            f'\n{keyword}',
-            formatted,
-            flags=re.IGNORECASE
+            f"\\b{keyword}\\b", f"\n{keyword}", formatted, flags=re.IGNORECASE
         )
 
     # Clean up extra whitespace
-    lines = [line.strip() for line in formatted.split('\n') if line.strip()]
-    return '\n'.join(lines)
+    lines = [line.strip() for line in formatted.split("\n") if line.strip()]
+    return "\n".join(lines)
 
 
 def validate_json_string(json_str: str) -> tuple[bool, dict[str, Any] | None]:
@@ -376,9 +381,9 @@ def validate_json_string(json_str: str) -> tuple[bool, dict[str, Any] | None]:
         return False, None
 
 
-def create_pagination_info(total_count: int,
-                          page_size: int,
-                          current_page: int) -> dict[str, Any]:
+def create_pagination_info(
+    total_count: int, page_size: int, current_page: int
+) -> dict[str, Any]:
     """Create pagination information dictionary.
 
     Args:
@@ -399,11 +404,11 @@ def create_pagination_info(total_count: int,
         "has_next": current_page < total_pages,
         "has_previous": current_page > 1,
         "start_index": (current_page - 1) * page_size + 1,
-        "end_index": min(current_page * page_size, total_count)
+        "end_index": min(current_page * page_size, total_count),
     }
 
 
-def mask_sensitive_data(data: str, mask_char: str = '*', visible_chars: int = 4) -> str:
+def mask_sensitive_data(data: str, mask_char: str = "*", visible_chars: int = 4) -> str:
     """Mask sensitive data for logging/display.
 
     Args:

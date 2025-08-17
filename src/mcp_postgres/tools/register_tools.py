@@ -130,7 +130,6 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "schema": EXECUTE_TRANSACTION_SCHEMA,
         "module": "query_tools",
     },
-
     # Schema Tools (8 tools)
     "list_tables": {
         "function": list_tables,
@@ -172,7 +171,6 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "schema": LIST_SEQUENCES_SCHEMA,
         "module": "schema_tools",
     },
-
     # Analysis Tools (4 tools)
     "analyze_column": {
         "function": analyze_column,
@@ -194,7 +192,6 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "schema": ANALYZE_CORRELATIONS_SCHEMA,
         "module": "analysis_tools",
     },
-
     # Data Tools (4 tools)
     "insert_data": {
         "function": insert_data,
@@ -216,7 +213,6 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "schema": BULK_INSERT_SCHEMA,
         "module": "data_tools",
     },
-
     # Relation Tools (3 tools)
     "get_foreign_keys": {
         "function": get_foreign_keys,
@@ -233,7 +229,6 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "schema": VALIDATE_REFERENTIAL_INTEGRITY_SCHEMA,
         "module": "relation_tools",
     },
-
     # Performance Tools (3 tools)
     "analyze_query_performance": {
         "function": analyze_query_performance,
@@ -250,7 +245,6 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "schema": GET_TABLE_STATS_SCHEMA,
         "module": "performance_tools",
     },
-
     # Backup Tools (3 tools)
     "export_table_csv": {
         "function": export_table_csv,
@@ -267,7 +261,6 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "schema": BACKUP_TABLE_SCHEMA,
         "module": "backup_tools",
     },
-
     # Admin Tools (4 tools)
     "get_database_info": {
         "function": get_database_info,
@@ -289,7 +282,6 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "schema": REINDEX_TABLE_SCHEMA,
         "module": "admin_tools",
     },
-
     # Validation Tools (3 tools)
     "validate_constraints": {
         "function": validate_constraints,
@@ -306,7 +298,6 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "schema": CHECK_DATA_INTEGRITY_SCHEMA,
         "module": "validation_tools",
     },
-
     # Generation Tools (3 tools)
     "generate_ddl": {
         "function": generate_ddl,
@@ -359,7 +350,9 @@ def get_tools_by_module(module_name: str) -> dict[str, dict[str, Any]]:
     }
 
 
-def validate_tool_parameters(tool_name: str, parameters: dict[str, Any]) -> tuple[bool, str | None]:
+def validate_tool_parameters(
+    tool_name: str, parameters: dict[str, Any]
+) -> tuple[bool, str | None]:
     """Validate parameters against a tool's schema.
     Args:
         tool_name: Name of the tool
@@ -403,7 +396,10 @@ def validate_tool_parameters(tool_name: str, parameters: dict[str, Any]) -> tupl
 
             # Enum validation
             if "enum" in param_schema and param_value not in param_schema["enum"]:
-                return False, f"Parameter '{param_name}' must be one of: {param_schema['enum']}"
+                return (
+                    False,
+                    f"Parameter '{param_name}' must be one of: {param_schema['enum']}",
+                )
 
     return True, None
 
@@ -419,21 +415,23 @@ async def register_all_tools(server: Server) -> None:
     """ failed_registrations = [] # noqa: F841 """
 
     # Register list_tools handler
-    @server.list_tools() # type: ignore[misc]
+    @server.list_tools()  # type: ignore[misc]
     async def handle_list_tools() -> list[Tool]:
         """Handle list_tools requests from MCP clients."""
         return [
             Tool(
                 name=info["schema"]["name"],
                 description=info["schema"]["description"],
-                inputSchema=info["schema"]["inputSchema"]
+                inputSchema=info["schema"]["inputSchema"],
             )
             for info in TOOL_REGISTRY.values()
         ]
 
     # Register call_tool handler
-    @server.call_tool() # type: ignore[misc]
-    async def handle_call_tool(name: str, arguments: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    @server.call_tool()  # type: ignore[misc]
+    async def handle_call_tool(
+        name: str, arguments: dict[str, Any] | None = None
+    ) -> list[dict[str, Any]]:
         """Handle tool calls from MCP clients."""
         if name not in TOOL_REGISTRY:
             raise ValueError(f"Unknown tool: {name}")
@@ -456,6 +454,7 @@ async def register_all_tools(server: Server) -> None:
             if isinstance(result, dict):
                 # If result is already a structured response, convert to text
                 import json
+
                 result_text = json.dumps(result, indent=2, default=str)
             else:
                 result_text = str(result)
@@ -495,28 +494,33 @@ def get_tool_discovery_info() -> dict[str, Any]:
         if module not in tools_by_module:
             tools_by_module[module] = []
 
-        tools_by_module[module].append({
-            "name": tool_name,
-            "description": tool_info["schema"]["description"],
-            "required_params": tool_info["schema"]["inputSchema"].get("required", []),
-            "optional_params": [
-                param for param in tool_info["schema"]["inputSchema"].get("properties", {}).keys()
-                if param not in tool_info["schema"]["inputSchema"].get("required", [])
-            ]
-        })
+        tools_by_module[module].append(
+            {
+                "name": tool_name,
+                "description": tool_info["schema"]["description"],
+                "required_params": tool_info["schema"]["inputSchema"].get(
+                    "required", []
+                ),
+                "optional_params": [
+                    param
+                    for param in tool_info["schema"]["inputSchema"]
+                    .get("properties", {})
+                    .keys()
+                    if param
+                    not in tool_info["schema"]["inputSchema"].get("required", [])
+                ],
+            }
+        )
 
     return {
         "total_tools": total_tools,
         "modules": {
-            module: {
-                "tool_count": len(tools),
-                "tools": tools
-            }
+            module: {"tool_count": len(tools), "tools": tools}
             for module, tools in tools_by_module.items()
         },
         "module_summary": {
             module: len(tools) for module, tools in tools_by_module.items()
-        }
+        },
     }
 
 

@@ -258,9 +258,13 @@ async def get_table_relationships(
         all_relationships = [dict(row) for row in rows]
 
         # Build relationship maps
-        parent_to_children : dict[str, list[dict[str, Any]]] = {}  # parent -> list of children
-        child_to_parents : dict[str, list[dict[str, Any]]] = {}  # child -> list of parents
-        table_relationships : list[dict[str, Any]] = []
+        parent_to_children: dict[
+            str, list[dict[str, Any]]
+        ] = {}  # parent -> list of children
+        child_to_parents: dict[
+            str, list[dict[str, Any]]
+        ] = {}  # child -> list of parents
+        table_relationships: list[dict[str, Any]] = []
 
         for rel in all_relationships:
             parent_key = f"{rel['parent_schema']}.{rel['parent_table']}"
@@ -566,6 +570,8 @@ async def validate_referential_integrity(
         if isinstance(e, MCPPostgresError):
             raise
         raise handle_postgres_error(e) from e
+
+
 # Tool schema definitions for MCP registration
 GET_FOREIGN_KEYS_SCHEMA = {
     "name": "get_foreign_keys",
@@ -575,16 +581,16 @@ GET_FOREIGN_KEYS_SCHEMA = {
         "properties": {
             "table_name": {
                 "type": "string",
-                "description": "Name of the table to get foreign keys for"
+                "description": "Name of the table to get foreign keys for",
             },
             "schema_name": {
                 "type": "string",
                 "description": "Schema name (defaults to 'public')",
-                "default": "public"
-            }
+                "default": "public",
+            },
         },
-        "required": ["table_name"]
-    }
+        "required": ["table_name"],
+    },
 }
 
 GET_TABLE_RELATIONSHIPS_SCHEMA = {
@@ -595,21 +601,21 @@ GET_TABLE_RELATIONSHIPS_SCHEMA = {
         "properties": {
             "table_name": {
                 "type": "string",
-                "description": "Optional table name to focus on specific relationships"
+                "description": "Optional table name to focus on specific relationships",
             },
             "schema_name": {
                 "type": "string",
                 "description": "Schema name (defaults to 'public')",
-                "default": "public"
+                "default": "public",
             },
             "include_views": {
                 "type": "boolean",
                 "description": "Whether to include view dependencies",
-                "default": False
-            }
+                "default": False,
+            },
         },
-        "required": []
-    }
+        "required": [],
+    },
 }
 
 VALIDATE_REFERENTIAL_INTEGRITY_SCHEMA = {
@@ -620,21 +626,21 @@ VALIDATE_REFERENTIAL_INTEGRITY_SCHEMA = {
         "properties": {
             "table_name": {
                 "type": "string",
-                "description": "Optional table name to focus validation on specific table"
+                "description": "Optional table name to focus validation on specific table",
             },
             "schema_name": {
                 "type": "string",
                 "description": "Schema name (defaults to 'public')",
-                "default": "public"
+                "default": "public",
             },
             "fix_violations": {
                 "type": "boolean",
                 "description": "Whether to attempt to fix violations (WARNING: may delete data)",
-                "default": False
-            }
+                "default": False,
+            },
         },
-        "required": []
-    }
+        "required": [],
+    },
 }
 
 # Export tool functions and schemas

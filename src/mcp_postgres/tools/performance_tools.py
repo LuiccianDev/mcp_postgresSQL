@@ -80,12 +80,13 @@ async def analyze_query_performance(
 
             # Calculate efficiency metrics
             row_accuracy = (
-                (min(actual_rows, planned_rows) / max(actual_rows, planned_rows, 1)) * 100
+                (min(actual_rows, planned_rows) / max(actual_rows, planned_rows, 1))
+                * 100
                 if actual_rows > 0 or planned_rows > 0
                 else 100
             )
 
-            performance_analysis : dict[str, Any] = {
+            performance_analysis: dict[str, Any] = {
                 "execution_plan": plan_data,
                 "performance_metrics": {
                     "total_cost": total_cost,
@@ -108,7 +109,9 @@ async def analyze_query_performance(
                 "performance_metrics": {
                     "analysis_time_ms": round(execution_time * 1000, 2),
                 },
-                "recommendations": ["Unable to analyze query - no execution plan returned"],
+                "recommendations": [
+                    "Unable to analyze query - no execution plan returned"
+                ],
                 "metadata": {
                     "query_analyzed": query[:100] + ("..." if len(query) > 100 else ""),
                     "analysis_failed": True,
@@ -204,14 +207,16 @@ async def find_slow_queries(
             slow_queries = []
             for row in result:
                 row_dict = dict(row)
-                slow_queries.append({
-                    "query_preview": row_dict.get("query_preview", ""),
-                    "duration_ms": row_dict.get("duration_ms", 0),
-                    "username": row_dict.get("username", ""),
-                    "database": row_dict.get("database", ""),
-                    "state": row_dict.get("state", ""),
-                    "source": "pg_stat_activity",
-                })
+                slow_queries.append(
+                    {
+                        "query_preview": row_dict.get("query_preview", ""),
+                        "duration_ms": row_dict.get("duration_ms", 0),
+                        "username": row_dict.get("username", ""),
+                        "database": row_dict.get("database", ""),
+                        "state": row_dict.get("state", ""),
+                        "source": "pg_stat_activity",
+                    }
+                )
 
             analysis_result = {
                 "slow_queries": slow_queries,
@@ -254,19 +259,23 @@ async def find_slow_queries(
             slow_queries = []
             for row in result:
                 row_dict = dict(row)
-                slow_queries.append({
-                    "query_preview": row_dict.get("query_preview", ""),
-                    "calls": row_dict.get("calls", 0),
-                    "total_exec_time_ms": row_dict.get("total_exec_time", 0),
-                    "mean_exec_time_ms": row_dict.get("mean_exec_time", 0),
-                    "max_exec_time_ms": row_dict.get("max_exec_time", 0),
-                    "min_exec_time_ms": row_dict.get("min_exec_time", 0),
-                    "stddev_exec_time_ms": row_dict.get("stddev_exec_time", 0),
-                    "total_rows": row_dict.get("total_rows", 0),
-                    "avg_time_per_call_ms": row_dict.get("avg_time_per_call", 0),
-                    "percent_total_time": round(row_dict.get("percent_total_time", 0), 2),
-                    "source": "pg_stat_statements",
-                })
+                slow_queries.append(
+                    {
+                        "query_preview": row_dict.get("query_preview", ""),
+                        "calls": row_dict.get("calls", 0),
+                        "total_exec_time_ms": row_dict.get("total_exec_time", 0),
+                        "mean_exec_time_ms": row_dict.get("mean_exec_time", 0),
+                        "max_exec_time_ms": row_dict.get("max_exec_time", 0),
+                        "min_exec_time_ms": row_dict.get("min_exec_time", 0),
+                        "stddev_exec_time_ms": row_dict.get("stddev_exec_time", 0),
+                        "total_rows": row_dict.get("total_rows", 0),
+                        "avg_time_per_call_ms": row_dict.get("avg_time_per_call", 0),
+                        "percent_total_time": round(
+                            row_dict.get("percent_total_time", 0), 2
+                        ),
+                        "source": "pg_stat_statements",
+                    }
+                )
 
             analysis_result = {
                 "slow_queries": slow_queries,
@@ -422,25 +431,29 @@ async def get_table_stats(table_name: str) -> dict[str, Any]:
         column_stats = []
         for row in basic_stats:
             row_dict = dict(row)
-            column_stats.append({
-                "column_name": row_dict.get("column_name"),
-                "n_distinct": row_dict.get("n_distinct"),
-                "most_common_values": row_dict.get("most_common_vals"),
-                "most_common_frequencies": row_dict.get("most_common_freqs"),
-                "correlation": row_dict.get("correlation"),
-            })
+            column_stats.append(
+                {
+                    "column_name": row_dict.get("column_name"),
+                    "n_distinct": row_dict.get("n_distinct"),
+                    "most_common_values": row_dict.get("most_common_vals"),
+                    "most_common_frequencies": row_dict.get("most_common_freqs"),
+                    "correlation": row_dict.get("correlation"),
+                }
+            )
 
         # Format index statistics
         index_usage = []
         for row in index_stats:
             row_dict = dict(row)
-            index_usage.append({
-                "index_name": row_dict.get("index_name"),
-                "scans": row_dict.get("index_scans", 0),
-                "tuples_read": row_dict.get("index_tuples_read", 0),
-                "tuples_fetched": row_dict.get("index_tuples_fetched", 0),
-                "size": row_dict.get("index_size"),
-            })
+            index_usage.append(
+                {
+                    "index_name": row_dict.get("index_name"),
+                    "scans": row_dict.get("index_scans", 0),
+                    "tuples_read": row_dict.get("index_tuples_read", 0),
+                    "tuples_fetched": row_dict.get("index_tuples_fetched", 0),
+                    "size": row_dict.get("index_size"),
+                }
+            )
 
         # Compile comprehensive statistics
         size_dict = dict(size_info) if size_info else {}
@@ -547,7 +560,9 @@ def _generate_performance_recommendations(plan: dict[str, Any]) -> list[str]:
     return recommendations
 
 
-def _generate_slow_query_recommendations(slow_queries: list[dict[str, Any]]) -> list[str]:
+def _generate_slow_query_recommendations(
+    slow_queries: list[dict[str, Any]],
+) -> list[str]:
     """Generate recommendations based on slow query analysis."""
     recommendations = []
 
@@ -571,11 +586,13 @@ def _generate_slow_query_recommendations(slow_queries: list[dict[str, Any]]) -> 
             "High execution time variance detected - investigate query plan stability"
         )
 
-    recommendations.extend([
-        "Review and optimize the slowest queries first",
-        "Consider adding appropriate indexes for frequently used queries",
-        "Analyze query patterns to identify optimization opportunities",
-    ])
+    recommendations.extend(
+        [
+            "Review and optimize the slowest queries first",
+            "Consider adding appropriate indexes for frequently used queries",
+            "Analyze query patterns to identify optimization opportunities",
+        ]
+    )
 
     return recommendations
 

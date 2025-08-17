@@ -2,7 +2,6 @@
 
 import argparse
 import asyncio
-import logging
 import signal
 import sys
 from typing import Any
@@ -11,26 +10,27 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 
 from .config.database import database_config, validate_database_config
-from .config.settings import server_config, validate_environment
+from .config.settings import validate_environment
 from .core.connection import connection_manager
 from .tools.register_tools import register_all_tools
+from .utils.error_handler import error_handler
+from .utils.logging import get_logger, setup_enhanced_logging
 
 
 def setup_logging() -> None:
-    """Configure logging for the MCP server."""
-    logging.basicConfig(
-        level=getattr(logging, server_config.log_level),
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=[
-            logging.StreamHandler(sys.stdout)
-        ]
-    )
+    """Configure enhanced logging for the MCP server."""
+    setup_enhanced_logging()
 
 
 async def shutdown_handler(server: Server) -> None:
     """Handle graceful shutdown of the server."""
-    logger = logging.getLogger(__name__)
+    logger = get_logger(__name__)
     logger.info("Shutting down MCP Postgres server...")
+
+    # Log final error statistics
+    error_stats = error_handler.get_error_statistics()
+    if error_stats["total_errors"] > 0:
+        logger.info("Final error statistics", extra_data=error_stats)
 
     # Close database connection pool
     try:
@@ -48,20 +48,14 @@ def parse_args() -> argparse.Namespace:
         description="MCP Postgres Server - PostgreSQL database interaction via MCP protocol"
     )
     parser.add_argument(
-        "--dev",
-        action="store_true",
-        help="Enable development mode with debug logging"
+        "--dev", action="store_true", help="Enable development mode with debug logging"
     )
     parser.add_argument(
         "--log-level",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-        help="Set logging level (overrides LOG_LEVEL environment variable)"
+        help="Set logging level (overrides LOG_LEVEL environment variable)",
     )
-    parser.add_argument(
-        "--version",
-        action="version",
-        version="mcp-postgres 0.1.0"
-    )
+    parser.add_argument("--version", action="version", version="mcp-postgres 0.1.0")
     return parser.parse_args()
 
 
@@ -73,16 +67,18 @@ async def main() -> None:
     # Override environment settings with CLI args
     if args.dev:
         import os
+
         os.environ["LOG_LEVEL"] = "DEBUG"
         os.environ["DEV_MODE"] = "true"
 
     if args.log_level:
         import os
+
         os.environ["LOG_LEVEL"] = args.log_level
 
-    # Setup logging
+    # Setup enhanced logging
     setup_logging()
-    logger = logging.getLogger(__name__)
+    logger = get_logger(__name__)
 
     if args.dev:
         logger.info("Development mode enabled")
@@ -104,7 +100,9 @@ async def main() -> None:
         # Perform health check
         health_status = await connection_manager.health_check()
         if health_status["status"] != "healthy":
-            raise ConnectionError(f"Database health check failed: {health_status.get('error', 'Unknown error')}")
+            raise ConnectionError(
+                f"Database health check failed: {health_status.get('error', 'Unknown error')}"
+            )
 
         logger.info("Database connection pool initialized successfully")
         logger.info(f"Pool stats: {health_status['pool_stats']}")
@@ -129,9 +127,7 @@ async def main() -> None:
         # Run the server
         async with stdio_server() as (read_stream, write_stream):
             await server.run(
-                read_stream,
-                write_stream,
-                server.create_initialization_options()
+                read_stream, write_stream, server.create_initialization_options()
             )
 
     except KeyboardInterrupt:

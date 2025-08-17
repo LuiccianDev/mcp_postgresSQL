@@ -51,11 +51,10 @@ async def validate_constraints(table_name: str) -> dict[str, Any]:
             table_check_query, [table_name], fetch_mode="one"
         )
 
-
         if not table_info:
             raise ValueError(f"Table '{table_name}' not found")
 
-        validation_results : dict[str, Any] = {
+        validation_results: dict[str, Any] = {
             "table_name": table_name,
             "constraint_violations": [],
             "validation_summary": {
@@ -90,9 +89,12 @@ async def validate_constraints(table_name: str) -> dict[str, Any]:
             WHERE "{column_name}" IS NULL
             """
 
-            null_result = await connection_manager.execute_query(
-                null_check_query, fetch_mode="one"
-            ) or {}
+            null_result = (
+                await connection_manager.execute_query(
+                    null_check_query, fetch_mode="one"
+                )
+                or {}
+            )
 
             validation_results["validation_summary"]["total_constraints_checked"] += 1
 
@@ -278,9 +280,12 @@ async def validate_constraints(table_name: str) -> dict[str, Any]:
             )
             """
 
-            fk_violations = await connection_manager.execute_query(
-                fk_violation_query, fetch_mode="one"
-            ) or {}
+            fk_violations = (
+                await connection_manager.execute_query(
+                    fk_violation_query, fetch_mode="one"
+                )
+                or {}
+            )
 
             validation_results["validation_summary"]["total_constraints_checked"] += 1
 
@@ -435,7 +440,7 @@ async def validate_data_types(
             else:
                 raise ValueError(f"Table '{table_name}' not found or has no columns")
 
-        validation_results : dict[str, Any] = {
+        validation_results: dict[str, Any] = {
             "table_name": table_name,
             "column_validations": [],
             "validation_summary": {
@@ -455,7 +460,7 @@ async def validate_data_types(
 
             logger.info(f"Validating data type for column {col_name} ({data_type})")
 
-            column_validation : dict[str, Any] = {
+            column_validation: dict[str, Any] = {
                 "column_name": col_name,
                 "expected_type": data_type,
                 "is_nullable": is_nullable,
@@ -482,9 +487,12 @@ async def validate_data_types(
                     WHERE "{col_name}" IS NOT NULL
                     AND ("{col_name}" < -32768 OR "{col_name}" > 32767)
                     """
-                    range_result = await connection_manager.execute_query(
-                        range_query, fetch_mode="one"
-                    ) or {}
+                    range_result = (
+                        await connection_manager.execute_query(
+                            range_query, fetch_mode="one"
+                        )
+                        or {}
+                    )
                     if range_result["violation_count"] > 0:
                         column_validation["violations"].append(
                             {
@@ -506,9 +514,12 @@ async def validate_data_types(
                         OR LENGTH(SUBSTRING(ABS("{col_name}")::text FROM POSITION('.' IN ABS("{col_name}")::text) + 1)) > {numeric_scale}
                     )
                     """
-                    precision_result = await connection_manager.execute_query(
-                        precision_query, fetch_mode="one"
-                    ) or {}
+                    precision_result = (
+                        await connection_manager.execute_query(
+                            precision_query, fetch_mode="one"
+                        )
+                        or {}
+                    )
                     if precision_result["violation_count"] > 0:
                         column_validation["violations"].append(
                             {
@@ -527,9 +538,12 @@ async def validate_data_types(
                     WHERE "{col_name}" IS NOT NULL
                     AND LENGTH("{col_name}") > {max_length}
                     """
-                    length_result = await connection_manager.execute_query(
-                        length_query, fetch_mode="one"
-                    ) or {}
+                    length_result = (
+                        await connection_manager.execute_query(
+                            length_query, fetch_mode="one"
+                        )
+                        or {}
+                    )
                     if length_result["violation_count"] > 0:
                         # Get examples of violating values
                         examples_query = f"""
@@ -577,9 +591,12 @@ async def validate_data_types(
                     WHERE "{col_name}" IS NOT NULL
                     AND ("{col_name}" < '1900-01-01'::date OR "{col_name}" > '2100-12-31'::date)
                     """
-                    date_result = await connection_manager.execute_query(
-                        date_range_query, fetch_mode="one"
-                    ) or {}
+                    date_result = (
+                        await connection_manager.execute_query(
+                            date_range_query, fetch_mode="one"
+                        )
+                        or {}
+                    )
                     if date_result["violation_count"] > 0:
                         column_validation["violations"].append(
                             {
@@ -596,9 +613,10 @@ async def validate_data_types(
                 FROM "{table_name}"
                 WHERE "{col_name}" IS NULL
                 """
-                null_result = await connection_manager.execute_query(
-                    null_query, fetch_mode="one"
-                ) or {}
+                null_result = (
+                    await connection_manager.execute_query(null_query, fetch_mode="one")
+                    or {}
+                )
                 if null_result["null_count"] > 0:
                     column_validation["violations"].append(
                         {
@@ -677,7 +695,7 @@ async def check_data_integrity(
         if not table_info:
             raise ValueError(f"Table '{table_name}' not found")
 
-        integrity_results : dict[str, Any] = {
+        integrity_results: dict[str, Any] = {
             "table_name": table_name,
             "check_type": "comprehensive" if comprehensive else "basic",
             "timestamp": None,  # Will be set by format_analysis_result
@@ -701,9 +719,9 @@ async def check_data_integrity(
         FROM "{table_name}"
         """
 
-        basic_stats = await connection_manager.execute_query(
-            stats_query, fetch_mode="one"
-        ) or {}
+        basic_stats = (
+            await connection_manager.execute_query(stats_query, fetch_mode="one") or {}
+        )
 
         integrity_results["detailed_results"]["basic_stats"] = {
             "total_rows": basic_stats["total_rows"],
@@ -787,9 +805,12 @@ async def check_data_integrity(
             WHERE table_name = $1 AND constraint_type = 'FOREIGN KEY'
             """
 
-            fk_count_result = await connection_manager.execute_query(
-                fk_query, [table_name], fetch_mode="one"
-            ) or {}
+            fk_count_result = (
+                await connection_manager.execute_query(
+                    fk_query, [table_name], fetch_mode="one"
+                )
+                or {}
+            )
 
             if fk_count_result["fk_count"] > 0:
                 # This is already covered in constraint validation
@@ -819,7 +840,7 @@ async def check_data_integrity(
                 columns_query, [table_name], fetch_mode="all"
             )
 
-            distribution_issues : list[dict[str, Any]] = []
+            distribution_issues: list[dict[str, Any]] = []
             for col_info in columns_info:
                 col_name = col_info["column_name"]
 
@@ -831,9 +852,12 @@ async def check_data_integrity(
                 FROM "{table_name}"
                 """
 
-                null_check = await connection_manager.execute_query(
-                    null_check_query, fetch_mode="one"
-                ) or {}
+                null_check = (
+                    await connection_manager.execute_query(
+                        null_check_query, fetch_mode="one"
+                    )
+                    or {}
+                )
 
                 if null_check["non_null_count"] == 0 and null_check["total_count"] > 0:
                     distribution_issues.append(
@@ -852,9 +876,12 @@ async def check_data_integrity(
                     WHERE "{col_name}" IS NOT NULL
                     """
 
-                    distinct_check = await connection_manager.execute_query(
-                        distinct_check_query, fetch_mode="one"
-                    ) or {}
+                    distinct_check = (
+                        await connection_manager.execute_query(
+                            distinct_check_query, fetch_mode="one"
+                        )
+                        or {}
+                    )
 
                     if distinct_check["distinct_count"] == 1:
                         distribution_issues.append(
@@ -979,6 +1006,8 @@ async def check_data_integrity(
         return format_error_response(
             "DATA_INTEGRITY_ERROR", f"Failed to check data integrity: {e}"
         )
+
+
 # Tool schema definitions for MCP registration
 VALIDATE_CONSTRAINTS_SCHEMA = {
     "name": "validate_constraints",
@@ -988,24 +1017,30 @@ VALIDATE_CONSTRAINTS_SCHEMA = {
         "properties": {
             "table_name": {
                 "type": "string",
-                "description": "Name of the table to validate constraints for"
+                "description": "Name of the table to validate constraints for",
             },
             "constraint_types": {
                 "type": "array",
                 "description": "Types of constraints to validate (optional, defaults to all)",
                 "items": {
                     "type": "string",
-                    "enum": ["PRIMARY KEY", "FOREIGN KEY", "UNIQUE", "CHECK", "NOT NULL"]
-                }
+                    "enum": [
+                        "PRIMARY KEY",
+                        "FOREIGN KEY",
+                        "UNIQUE",
+                        "CHECK",
+                        "NOT NULL",
+                    ],
+                },
             },
             "fix_violations": {
                 "type": "boolean",
                 "description": "Whether to attempt to fix violations (WARNING: may modify data)",
-                "default": False
-            }
+                "default": False,
+            },
         },
-        "required": ["table_name"]
-    }
+        "required": ["table_name"],
+    },
 }
 
 VALIDATE_DATA_TYPES_SCHEMA = {
@@ -1016,21 +1051,21 @@ VALIDATE_DATA_TYPES_SCHEMA = {
         "properties": {
             "table_name": {
                 "type": "string",
-                "description": "Name of the table to validate data types for"
+                "description": "Name of the table to validate data types for",
             },
             "columns": {
                 "type": "array",
                 "description": "Specific columns to validate (optional, defaults to all columns)",
-                "items": {"type": "string"}
+                "items": {"type": "string"},
             },
             "strict_mode": {
                 "type": "boolean",
                 "description": "Whether to use strict type validation",
-                "default": False
-            }
+                "default": False,
+            },
         },
-        "required": ["table_name"]
-    }
+        "required": ["table_name"],
+    },
 }
 
 CHECK_DATA_INTEGRITY_SCHEMA = {
@@ -1041,30 +1076,35 @@ CHECK_DATA_INTEGRITY_SCHEMA = {
         "properties": {
             "table_name": {
                 "type": "string",
-                "description": "Optional table name to focus integrity checks on specific table"
+                "description": "Optional table name to focus integrity checks on specific table",
             },
             "schema_name": {
                 "type": "string",
                 "description": "Schema name (defaults to 'public')",
-                "default": "public"
+                "default": "public",
             },
             "check_types": {
                 "type": "array",
                 "description": "Types of integrity checks to perform",
                 "items": {
                     "type": "string",
-                    "enum": ["constraints", "data_types", "referential_integrity", "duplicates"]
+                    "enum": [
+                        "constraints",
+                        "data_types",
+                        "referential_integrity",
+                        "duplicates",
+                    ],
                 },
-                "default": ["constraints", "data_types", "referential_integrity"]
+                "default": ["constraints", "data_types", "referential_integrity"],
             },
             "detailed_report": {
                 "type": "boolean",
                 "description": "Whether to include detailed violation information",
-                "default": True
-            }
+                "default": True,
+            },
         },
-        "required": []
-    }
+        "required": [],
+    },
 }
 
 # Export tool functions and schemas

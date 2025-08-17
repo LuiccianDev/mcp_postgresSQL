@@ -901,6 +901,7 @@ async def analyze_correlations(
             "ANALYSIS_ERROR", f"Failed to analyze correlations: {e}"
         )
 
+
 # Tool schema definitions for MCP registration
 ANALYZE_COLUMN_SCHEMA = {
     "name": "analyze_column",
@@ -910,15 +911,15 @@ ANALYZE_COLUMN_SCHEMA = {
         "properties": {
             "table_name": {
                 "type": "string",
-                "description": "Name of the table containing the column"
+                "description": "Name of the table containing the column",
             },
             "column_name": {
                 "type": "string",
-                "description": "Name of the column to analyze"
-            }
+                "description": "Name of the column to analyze",
+            },
         },
-        "required": ["table_name", "column_name"]
-    }
+        "required": ["table_name", "column_name"],
+    },
 }
 
 FIND_DUPLICATES_SCHEMA = {
@@ -929,22 +930,22 @@ FIND_DUPLICATES_SCHEMA = {
         "properties": {
             "table_name": {
                 "type": "string",
-                "description": "Name of the table to check for duplicates"
+                "description": "Name of the table to check for duplicates",
             },
             "columns": {
                 "type": "array",
                 "description": "List of column names to check for duplicates (optional, defaults to all columns)",
-                "items": {"type": "string"}
+                "items": {"type": "string"},
             },
             "limit": {
                 "type": "integer",
                 "description": "Maximum number of duplicate groups to return",
                 "default": 100,
-                "minimum": 1
-            }
+                "minimum": 1,
+            },
         },
-        "required": ["table_name"]
-    }
+        "required": ["table_name"],
+    },
 }
 
 PROFILE_TABLE_SCHEMA = {
@@ -955,16 +956,16 @@ PROFILE_TABLE_SCHEMA = {
         "properties": {
             "table_name": {
                 "type": "string",
-                "description": "Name of the table to profile"
+                "description": "Name of the table to profile",
             },
             "sample_size": {
                 "type": "integer",
                 "description": "Optional sample size for large tables (uses TABLESAMPLE)",
-                "minimum": 1
-            }
+                "minimum": 1,
+            },
         },
-        "required": ["table_name"]
-    }
+        "required": ["table_name"],
+    },
 }
 
 ANALYZE_CORRELATIONS_SCHEMA = {
@@ -975,22 +976,22 @@ ANALYZE_CORRELATIONS_SCHEMA = {
         "properties": {
             "table_name": {
                 "type": "string",
-                "description": "Name of the table to analyze"
+                "description": "Name of the table to analyze",
             },
             "columns": {
                 "type": "array",
                 "description": "List of numeric column names to analyze (optional, defaults to all numeric columns)",
-                "items": {"type": "string"}
+                "items": {"type": "string"},
             },
             "method": {
                 "type": "string",
                 "description": "Correlation method to use",
                 "enum": ["pearson"],
-                "default": "pearson"
-            }
+                "default": "pearson",
+            },
         },
-        "required": ["table_name"]
-    }
+        "required": ["table_name"],
+    },
 }
 
 # Export tool functions and schemas

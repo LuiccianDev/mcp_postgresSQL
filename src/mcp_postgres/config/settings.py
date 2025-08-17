@@ -14,6 +14,10 @@ class ServerConfig:
     debug: bool = False
     query_timeout: int = 30
     max_query_results: int = 10000
+    enable_structured_logging: bool = True
+    log_query_parameters: bool = False
+    log_execution_time: bool = True
+    log_result_size: bool = True
 
 
 @dataclass
@@ -40,6 +44,12 @@ def load_server_config() -> ServerConfig:
         debug=os.getenv("DEBUG", "false").lower() == "true",
         query_timeout=int(os.getenv("QUERY_TIMEOUT", "30")),
         max_query_results=int(os.getenv("MAX_QUERY_RESULTS", "10000")),
+        enable_structured_logging=os.getenv("ENABLE_STRUCTURED_LOGGING", "true").lower()
+        == "true",
+        log_query_parameters=os.getenv("LOG_QUERY_PARAMETERS", "false").lower()
+        == "true",
+        log_execution_time=os.getenv("LOG_EXECUTION_TIME", "true").lower() == "true",
+        log_result_size=os.getenv("LOG_RESULT_SIZE", "true").lower() == "true",
     )
 
 
@@ -49,9 +59,12 @@ def load_security_config() -> SecurityConfig:
     blocked_operations = os.getenv("BLOCKED_OPERATIONS")
 
     return SecurityConfig(
-        enable_query_validation=os.getenv("ENABLE_QUERY_VALIDATION", "true").lower() == "true",
+        enable_query_validation=os.getenv("ENABLE_QUERY_VALIDATION", "true").lower()
+        == "true",
         allowed_schemas=allowed_schemas.split(",") if allowed_schemas else None,
-        blocked_operations=blocked_operations.split(",") if blocked_operations else None,
+        blocked_operations=blocked_operations.split(",")
+        if blocked_operations
+        else None,
         max_query_length=int(os.getenv("MAX_QUERY_LENGTH", "10000")),
     )
 
@@ -66,7 +79,9 @@ def validate_environment() -> None:
             missing_vars.append(var)
 
     if missing_vars:
-        raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}")
+        raise ValueError(
+            f"Missing required environment variables: {', '.join(missing_vars)}"
+        )
 
 
 # Global configuration instances

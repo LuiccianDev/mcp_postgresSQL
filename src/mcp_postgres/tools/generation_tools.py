@@ -46,7 +46,9 @@ async def generate_ddl(
         try:
             validate_table_name(table_name)
         except ValueError as e:
-            raise ValidationError(str(e), field_name="table_name", field_value=table_name) from e
+            raise ValidationError(
+                str(e), field_name="table_name", field_value=table_name
+            ) from e
 
         if schema_name is None:
             schema_name = "public"
@@ -54,7 +56,9 @@ async def generate_ddl(
         try:
             validate_table_name(schema_name)
         except ValueError as e:
-            raise ValidationError(str(e), field_name="schema_name", field_value=schema_name) from e
+            raise ValidationError(
+                str(e), field_name="schema_name", field_value=schema_name
+            ) from e
 
         # Check if table exists
         table_exists_query = """
@@ -172,7 +176,9 @@ async def generate_ddl(
             if col["character_maximum_length"]:
                 col_def += f" {data_type}({col['character_maximum_length']})"
             elif col["numeric_precision"] and col["numeric_scale"] is not None:
-                col_def += f" {data_type}({col['numeric_precision']},{col['numeric_scale']})"
+                col_def += (
+                    f" {data_type}({col['numeric_precision']},{col['numeric_scale']})"
+                )
             elif col["numeric_precision"]:
                 col_def += f" {data_type}({col['numeric_precision']})"
             else:
@@ -196,7 +202,7 @@ async def generate_ddl(
             ddl_lines.append(f",\n{pk_def}")
 
         # Add unique constraints
-        unique_groups : dict[str, Any] = {}
+        unique_groups: dict[str, Any] = {}
         for constraint in unique_constraints:
             constraint_name = constraint["constraint_name"]
             if constraint_name not in unique_groups:
@@ -204,11 +210,13 @@ async def generate_ddl(
             unique_groups[constraint_name].append(constraint["column_name"])
 
         for constraint_name, columns_list in unique_groups.items():
-            unique_def = f"    CONSTRAINT {constraint_name} UNIQUE ({', '.join(columns_list)})"
+            unique_def = (
+                f"    CONSTRAINT {constraint_name} UNIQUE ({', '.join(columns_list)})"
+            )
             ddl_lines.append(f",\n{unique_def}")
 
         # Add foreign key constraints
-        fk_groups : dict[str, Any] = {}
+        fk_groups: dict[str, Any] = {}
         for fk in fk_constraints:
             constraint_name = fk["constraint_name"]
             if constraint_name not in fk_groups:
@@ -315,7 +323,9 @@ async def generate_insert_template(
         try:
             validate_table_name(table_name)
         except ValueError as e:
-            raise ValidationError(str(e), field_name="table_name", field_value=table_name) from e
+            raise ValidationError(
+                str(e), field_name="table_name", field_value=table_name
+            ) from e
 
         if schema_name is None:
             schema_name = "public"
@@ -323,7 +333,9 @@ async def generate_insert_template(
         try:
             validate_table_name(schema_name)
         except ValueError as e:
-            raise ValidationError(str(e), field_name="schema_name", field_value=schema_name) from e
+            raise ValidationError(
+                str(e), field_name="schema_name", field_value=schema_name
+            ) from e
 
         # Check if table exists
         table_exists_query = """
@@ -397,7 +409,7 @@ async def generate_insert_template(
         # Template with only required columns
         if required_columns:
             req_column_names = [col["name"] for col in required_columns]
-            req_placeholders = [f"${i+1}" for i in range(len(required_columns))]
+            req_placeholders = [f"${i + 1}" for i in range(len(required_columns))]
 
             templates["required_only"] = {
                 "sql": f"INSERT INTO {schema_name}.{table_name} ({', '.join(req_column_names)}) VALUES ({', '.join(req_placeholders)});",
@@ -408,7 +420,7 @@ async def generate_insert_template(
         # Template with all columns (if include_optional is True)
         all_column_names = [col["name"] for col in all_columns]
         if include_optional:
-            all_placeholders = [f"${i+1}" for i in range(len(all_columns))]
+            all_placeholders = [f"${i + 1}" for i in range(len(all_columns))]
 
             templates["all_columns"] = {
                 "sql": f"INSERT INTO {schema_name}.{table_name} ({', '.join(all_column_names)}) VALUES ({', '.join(all_placeholders)});",
@@ -494,7 +506,7 @@ def _generate_sample_value(data_type: str, col_info: dict[str, Any]) -> str:
     elif "uuid" in data_type:
         return "'550e8400-e29b-41d4-a716-446655440000'"
     elif "json" in data_type:
-        return "'{\"key\": \"value\"}'"
+        return '\'{"key": "value"}\''
     elif "text" in data_type or "char" in data_type or "varchar" in data_type:
         max_length = col_info.get("max_length")
         if max_length and max_length < 20:
@@ -533,7 +545,9 @@ async def generate_orm_model(
         try:
             validate_table_name(table_name)
         except ValueError as e:
-            raise ValidationError(str(e), field_name="table_name", field_value=table_name) from e
+            raise ValidationError(
+                str(e), field_name="table_name", field_value=table_name
+            ) from e
 
         if schema_name is None:
             schema_name = "public"
@@ -541,7 +555,9 @@ async def generate_orm_model(
         try:
             validate_table_name(schema_name)
         except ValueError as e:
-            raise ValidationError(str(e), field_name="schema_name", field_value=schema_name) from e
+            raise ValidationError(
+                str(e), field_name="schema_name", field_value=schema_name
+            ) from e
 
         # Validate model type
         supported_types = {"sqlalchemy", "django", "pydantic"}
@@ -647,9 +663,7 @@ async def generate_orm_model(
                 class_name, table_name, columns, pk_column_names, fk_info
             )
         elif model_type == "pydantic":
-            model_code = _generate_pydantic_model(
-                class_name, columns, pk_column_names
-            )
+            model_code = _generate_pydantic_model(class_name, columns, pk_column_names)
 
         result = {
             "table_name": table_name,
@@ -701,7 +715,7 @@ def _generate_sqlalchemy_model(
 
     for col in columns:
         col_name = col["column_name"]
-        data_type = col["data_type"].lower() # noqa: F841
+        data_type = col["data_type"].lower()  # noqa: F841
         is_nullable = col["is_nullable"] == "YES"
         has_default = col["column_default"] is not None
         is_pk = col_name in pk_columns
@@ -748,7 +762,7 @@ def _generate_django_model(
 
     for col in columns:
         col_name = col["column_name"]
-        data_type = col["data_type"].lower() # noqa: F841
+        data_type = col["data_type"].lower()  # noqa: F841
         is_nullable = col["is_nullable"] == "YES"
         has_default = col["column_default"] is not None
         is_pk = col_name in pk_columns
@@ -801,7 +815,7 @@ def _generate_pydantic_model(
 
     for col in columns:
         col_name = col["column_name"]
-        data_type = col["data_type"].lower() # noqa: F841
+        data_type = col["data_type"].lower()  # noqa: F841
         is_nullable = col["is_nullable"] == "YES"
         has_default = col["column_default"] is not None
 
@@ -878,9 +892,17 @@ def _map_postgres_to_django_field(col: dict[str, Any]) -> str:
             return "SmallIntegerField"
         return "IntegerField"
     elif "varchar" in data_type or "character varying" in data_type:
-        return f"CharField(max_length={max_length})" if max_length else "CharField(max_length=255)"
+        return (
+            f"CharField(max_length={max_length})"
+            if max_length
+            else "CharField(max_length=255)"
+        )
     elif "char" in data_type and "varchar" not in data_type:
-        return f"CharField(max_length={max_length})" if max_length else "CharField(max_length=1)"
+        return (
+            f"CharField(max_length={max_length})"
+            if max_length
+            else "CharField(max_length=1)"
+        )
     elif "text" in data_type:
         return "TextField"
     elif "numeric" in data_type or "decimal" in data_type:

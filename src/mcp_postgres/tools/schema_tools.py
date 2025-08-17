@@ -857,11 +857,11 @@ LIST_TABLES_SCHEMA = {
             "schema_name": {
                 "type": "string",
                 "description": "Schema name to filter tables (defaults to 'public')",
-                "default": "public"
+                "default": "public",
             }
         },
-        "required": []
-    }
+        "required": [],
+    },
 }
 
 DESCRIBE_TABLE_SCHEMA = {
@@ -872,16 +872,16 @@ DESCRIBE_TABLE_SCHEMA = {
         "properties": {
             "table_name": {
                 "type": "string",
-                "description": "Name of the table to describe"
+                "description": "Name of the table to describe",
             },
             "schema_name": {
                 "type": "string",
                 "description": "Schema name (defaults to 'public')",
-                "default": "public"
-            }
+                "default": "public",
+            },
         },
-        "required": ["table_name"]
-    }
+        "required": ["table_name"],
+    },
 }
 
 LIST_INDEXES_SCHEMA = {
@@ -892,16 +892,16 @@ LIST_INDEXES_SCHEMA = {
         "properties": {
             "table_name": {
                 "type": "string",
-                "description": "Optional table name to filter indexes"
+                "description": "Optional table name to filter indexes",
             },
             "schema_name": {
                 "type": "string",
                 "description": "Schema name (defaults to 'public')",
-                "default": "public"
-            }
+                "default": "public",
+            },
         },
-        "required": []
-    }
+        "required": [],
+    },
 }
 
 LIST_CONSTRAINTS_SCHEMA = {
@@ -912,16 +912,16 @@ LIST_CONSTRAINTS_SCHEMA = {
         "properties": {
             "table_name": {
                 "type": "string",
-                "description": "Optional table name to filter constraints"
+                "description": "Optional table name to filter constraints",
             },
             "schema_name": {
                 "type": "string",
                 "description": "Schema name (defaults to 'public')",
-                "default": "public"
-            }
+                "default": "public",
+            },
         },
-        "required": []
-    }
+        "required": [],
+    },
 }
 
 LIST_VIEWS_SCHEMA = {
@@ -933,11 +933,11 @@ LIST_VIEWS_SCHEMA = {
             "schema_name": {
                 "type": "string",
                 "description": "Schema name (defaults to 'public')",
-                "default": "public"
+                "default": "public",
             }
         },
-        "required": []
-    }
+        "required": [],
+    },
 }
 
 LIST_FUNCTIONS_SCHEMA = {
@@ -949,11 +949,11 @@ LIST_FUNCTIONS_SCHEMA = {
             "schema_name": {
                 "type": "string",
                 "description": "Schema name (defaults to 'public')",
-                "default": "public"
+                "default": "public",
             }
         },
-        "required": []
-    }
+        "required": [],
+    },
 }
 
 LIST_TRIGGERS_SCHEMA = {
@@ -964,16 +964,16 @@ LIST_TRIGGERS_SCHEMA = {
         "properties": {
             "table_name": {
                 "type": "string",
-                "description": "Optional table name to filter triggers"
+                "description": "Optional table name to filter triggers",
             },
             "schema_name": {
                 "type": "string",
                 "description": "Schema name (defaults to 'public')",
-                "default": "public"
-            }
+                "default": "public",
+            },
         },
-        "required": []
-    }
+        "required": [],
+    },
 }
 
 LIST_SEQUENCES_SCHEMA = {
@@ -985,11 +985,11 @@ LIST_SEQUENCES_SCHEMA = {
             "schema_name": {
                 "type": "string",
                 "description": "Schema name (defaults to 'public')",
-                "default": "public"
+                "default": "public",
             }
         },
-        "required": []
-    }
+        "required": [],
+    },
 }
 
 # Export tool functions and schemas

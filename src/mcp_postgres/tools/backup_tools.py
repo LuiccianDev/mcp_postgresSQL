@@ -101,7 +101,9 @@ async def export_table_csv(
             full_where_query = f"SELECT 1 WHERE {where_clause}"
             is_valid, error_msg = validate_query_permissions(full_where_query)
             if not is_valid:
-                raise SecurityError(f"WHERE clause security validation failed: {error_msg}")
+                raise SecurityError(
+                    f"WHERE clause security validation failed: {error_msg}"
+                )
 
             query += f" WHERE {where_clause}"
             query_params = sanitize_parameters(parameters or [])
@@ -199,7 +201,11 @@ async def export_table_csv(
 
     except Exception as e:
         logger.error(f"CSV export error: {e}")
-        mcp_error = handle_postgres_error(e, query if 'query' in locals() else None, query_params if 'query_params' in locals() else None)
+        mcp_error = handle_postgres_error(
+            e,
+            query if "query" in locals() else None,
+            query_params if "query_params" in locals() else None,
+        )
         return format_error_response(
             mcp_error.error_code, str(mcp_error), mcp_error.details
         )
@@ -271,9 +277,7 @@ async def import_csv_data(
 
         # Parse CSV data
         csv_buffer = io.StringIO(csv_data)
-        csv_reader = csv.reader(
-            csv_buffer, delimiter=delimiter, quotechar=quote_char
-        )
+        csv_reader = csv.reader(csv_buffer, delimiter=delimiter, quotechar=quote_char)
 
         rows = list(csv_reader)
         csv_buffer.close()
@@ -284,13 +288,17 @@ async def import_csv_data(
         # Handle headers
         if has_headers:
             if len(rows) < 2:
-                raise ValidationError("CSV with headers must have at least 2 rows (header + data)")
+                raise ValidationError(
+                    "CSV with headers must have at least 2 rows (header + data)"
+                )
             header_row = rows[0]
             data_rows = rows[1:]
             column_names = [col.strip() for col in header_row]
         else:
             if not columns:
-                raise ValidationError("columns parameter is required when has_headers=False")
+                raise ValidationError(
+                    "columns parameter is required when has_headers=False"
+                )
             column_names = columns
             data_rows = rows
 
@@ -320,10 +328,12 @@ async def import_csv_data(
         # Validate that all CSV columns exist in table
         for col_name in column_names:
             if col_name not in schema_columns:
-                raise ValidationError(f"Column {col_name} does not exist in table {table_name}")
+                raise ValidationError(
+                    f"Column {col_name} does not exist in table {table_name}"
+                )
 
         # Prepare insert query
-        placeholders = ", ".join(f"${i+1}" for i in range(len(column_names)))
+        placeholders = ", ".join(f"${i + 1}" for i in range(len(column_names)))
         quoted_columns = ", ".join(f'"{col}"' for col in column_names)
 
         if on_conflict == "skip":
@@ -335,7 +345,9 @@ async def import_csv_data(
         elif on_conflict == "update":
             # For update, we need a unique constraint - this is simplified
             # In practice, you'd need to specify which columns to update
-            update_clause = ", ".join(f'"{col}" = EXCLUDED."{col}"' for col in column_names)
+            update_clause = ", ".join(
+                f'"{col}" = EXCLUDED."{col}"' for col in column_names
+            )
             insert_query = f"""
             INSERT INTO "{table_name}" ({quoted_columns})
             VALUES ({placeholders})
@@ -354,7 +366,9 @@ async def import_csv_data(
         failed_rows = 0
         errors = []
 
-        logger.info(f"Starting CSV import for table {table_name}: {total_rows} rows in batches of {batch_size}")
+        logger.info(
+            f"Starting CSV import for table {table_name}: {total_rows} rows in batches of {batch_size}"
+        )
 
         for batch_start in range(0, total_rows, batch_size):
             batch_end = min(batch_start + batch_size, total_rows)
@@ -372,21 +386,33 @@ async def import_csv_data(
                 # Convert and validate data types if requested
                 processed_row: list[Any] | None = []
                 if validate_data:
-                    for _col_idx, (col_name, value) in enumerate(zip(column_names, row, strict=False)):
+                    for _col_idx, (col_name, value) in enumerate(
+                        zip(column_names, row, strict=False)
+                    ):
                         if processed_row is None:
                             break  # La fila ya es inválida, no seguimos
                         try:
                             schema_col = schema_columns[col_name]
                             data_type = schema_col["data_type"]
 
-                            if value.strip() == "" and schema_col["is_nullable"] == "YES":
+                            if (
+                                value.strip() == ""
+                                and schema_col["is_nullable"] == "YES"
+                            ):
                                 processed_row.append(None)
                             elif data_type in ("integer", "bigint", "smallint"):
                                 processed_row.append(int(value))
-                            elif data_type in ("numeric", "decimal", "real", "double precision"):
+                            elif data_type in (
+                                "numeric",
+                                "decimal",
+                                "real",
+                                "double precision",
+                            ):
                                 processed_row.append(float(value))
                             elif data_type == "boolean":
-                                processed_row.append(value.lower() in ("true", "t", "1", "yes", "y"))
+                                processed_row.append(
+                                    value.lower() in ("true", "t", "1", "yes", "y")
+                                )
                             else:
                                 processed_row.append(value)
                         except (ValueError, TypeError) as e:
@@ -398,22 +424,28 @@ async def import_csv_data(
                     processed_row = list(row)
 
                 if processed_row is not None:
-                    batch_queries.append({
-                        "query": insert_query,
-                        "parameters": processed_row,
-                        "fetch_mode": "none"
-                    })
+                    batch_queries.append(
+                        {
+                            "query": insert_query,
+                            "parameters": processed_row,
+                            "fetch_mode": "none",
+                        }
+                    )
 
             # Execute batch
             if batch_queries:
                 try:
                     await connection_manager.execute_transaction(batch_queries)
                     successful_rows += len(batch_queries)
-                    logger.debug(f"Batch {batch_start//batch_size + 1}: {len(batch_queries)} rows inserted successfully")
+                    logger.debug(
+                        f"Batch {batch_start // batch_size + 1}: {len(batch_queries)} rows inserted successfully"
+                    )
                 except Exception as e:
-                    logger.error(f"Batch {batch_start//batch_size + 1} failed: {e}")
+                    logger.error(f"Batch {batch_start // batch_size + 1} failed: {e}")
                     failed_rows += len(batch_queries)
-                    errors.append(f"Batch {batch_start//batch_size + 1} failed: {str(e)}")
+                    errors.append(
+                        f"Batch {batch_start // batch_size + 1} failed: {str(e)}"
+                    )
 
             processed_rows += len(batch_rows)
 
@@ -498,7 +530,9 @@ async def backup_table(
             raise SecurityError(f"Access denied to table: {table_name}")
 
         if not include_data and not include_structure:
-            raise ValidationError("At least one of include_data or include_structure must be True")
+            raise ValidationError(
+                "At least one of include_data or include_structure must be True"
+            )
 
         if format_type not in {"sql", "json"}:
             raise ValidationError("format_type must be 'sql' or 'json'")
@@ -604,7 +638,9 @@ async def backup_table(
                         col_def += f"({col['character_maximum_length']})"
                     elif col["numeric_precision"]:
                         if col["numeric_scale"]:
-                            col_def += f"({col['numeric_precision']},{col['numeric_scale']})"
+                            col_def += (
+                                f"({col['numeric_precision']},{col['numeric_scale']})"
+                            )
                         else:
                             col_def += f"({col['numeric_precision']})"
 
@@ -628,7 +664,11 @@ async def backup_table(
                     fk_def = f'CONSTRAINT "{fk["constraint_name"]}" FOREIGN KEY ("{fk["column_name"]}") REFERENCES "{fk["foreign_table_name"]}"("{fk["foreign_column_name"]}")'
                     column_definitions.append(fk_def)
 
-                create_table_sql = f'CREATE TABLE "{table_name}" (\n  ' + ",\n  ".join(column_definitions) + "\n);"
+                create_table_sql = (
+                    f'CREATE TABLE "{table_name}" (\n  '
+                    + ",\n  ".join(column_definitions)
+                    + "\n);"
+                )
 
                 # Add indexes
                 index_statements = []
@@ -660,7 +700,9 @@ async def backup_table(
                 full_where_query = f"SELECT 1 WHERE {where_clause}"
                 is_valid, error_msg = validate_query_permissions(full_where_query)
                 if not is_valid:
-                    raise SecurityError(f"WHERE clause security validation failed: {error_msg}")
+                    raise SecurityError(
+                        f"WHERE clause security validation failed: {error_msg}"
+                    )
 
                 data_query += f" WHERE {where_clause}"
                 query_params = sanitize_parameters(parameters or [])
@@ -693,14 +735,18 @@ async def backup_table(
                                 values.append(str(serialize_value(value)))
 
                         values_str = ", ".join(values)
-                        insert_statements.append(f'INSERT INTO "{table_name}" ({quoted_columns}) VALUES ({values_str});')
+                        insert_statements.append(
+                            f'INSERT INTO "{table_name}" ({quoted_columns}) VALUES ({values_str});'
+                        )
 
                     backup_data["data"] = "\n".join(insert_statements)
                 else:
                     backup_data["data"] = f"-- No data found in table {table_name}"
 
             else:  # json format
-                backup_data["data"] = [dict(row) for row in table_data] if table_data else []
+                backup_data["data"] = (
+                    [dict(row) for row in table_data] if table_data else []
+                )
 
         execution_time = time.time() - start_time
 
@@ -711,13 +757,13 @@ async def backup_table(
             "include_structure": include_structure,
             "format_type": format_type,
             "has_where_clause": where_clause is not None,
-            "data_row_count": len(table_data) if include_data and 'table_data' in locals() else 0,
+            "data_row_count": len(table_data)
+            if include_data and "table_data" in locals()
+            else 0,
             "structure_included": include_structure,
         }
 
-        logger.info(
-            f"Table backup completed for {table_name} in {execution_time:.3f}s"
-        )
+        logger.info(f"Table backup completed for {table_name} in {execution_time:.3f}s")
 
         return format_success_response(
             data=backup_data,

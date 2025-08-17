@@ -9,10 +9,12 @@ from decimal import Decimal
 from typing import Any
 
 
-def format_query_result(rows: list[dict[str, Any]],
-                       columns: list[str],
-                       execution_time: float,
-                       row_count: int | None = None) -> dict[str, Any]:
+def format_query_result(
+    rows: list[dict[str, Any]],
+    columns: list[str],
+    execution_time: float,
+    row_count: int | None = None,
+) -> dict[str, Any]:
     """Format database query results into standardized response.
 
     Args:
@@ -39,17 +41,19 @@ def format_query_result(rows: list[dict[str, Any]],
         "execution_time_ms": round(execution_time * 1000, 2),
         "metadata": {
             "has_results": len(formatted_rows) > 0,
-            "column_count": len(columns)
-        }
+            "column_count": len(columns),
+        },
     }
 
     return result
 
 
-def format_table_info(table_name: str,
-                     columns: list[dict[str, Any]],
-                     indexes: list[dict[str, Any]] | None = None,
-                     constraints: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+def format_table_info(
+    table_name: str,
+    columns: list[dict[str, Any]],
+    indexes: list[dict[str, Any]] | None = None,
+    constraints: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     """Format table information into structured response.
 
     Args:
@@ -67,9 +71,11 @@ def format_table_info(table_name: str,
         "column_count": len(columns),
         "metadata": {
             "has_primary_key": any(col.get("is_primary_key", False) for col in columns),
-            "nullable_columns": sum(1 for col in columns if col.get("is_nullable", True)),
-            "indexed_columns": len(indexes) if indexes else 0
-        }
+            "nullable_columns": sum(
+                1 for col in columns if col.get("is_nullable", True)
+            ),
+            "indexed_columns": len(indexes) if indexes else 0,
+        },
     }
 
     if indexes:
@@ -81,10 +87,12 @@ def format_table_info(table_name: str,
     return result
 
 
-def format_analysis_result(analysis_type: str,
-                          table_name: str,
-                          column_name: str | None = None,
-                          results: dict[str, Any] | None = None) -> dict[str, Any]:
+def format_analysis_result(
+    analysis_type: str,
+    table_name: str,
+    column_name: str | None = None,
+    results: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Format data analysis results.
 
     Args:
@@ -100,7 +108,7 @@ def format_analysis_result(analysis_type: str,
         "analysis_type": analysis_type,
         "table_name": table_name,
         "timestamp": datetime.now().isoformat(),
-        "results": serialize_dict(results or {})
+        "results": serialize_dict(results or {}),
     }
 
     if column_name:
@@ -109,9 +117,9 @@ def format_analysis_result(analysis_type: str,
     return result
 
 
-def format_error_response(error_code: str,
-                         message: str,
-                         details: dict[str, Any] | None = None) -> dict[str, Any]:
+def format_error_response(
+    error_code: str, message: str, details: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """Format error responses in consistent structure.
 
     Args:
@@ -125,7 +133,7 @@ def format_error_response(error_code: str,
     error_info: dict[str, Any] = {
         "code": error_code,
         "message": message,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
 
     if details:
@@ -136,9 +144,9 @@ def format_error_response(error_code: str,
     return error_response
 
 
-def format_success_response(data: Any,
-                           message: str | None = None,
-                           metadata: dict[str, Any] | None = None) -> dict[str, Any]:
+def format_success_response(
+    data: Any, message: str | None = None, metadata: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """Format successful operation responses.
 
     Args:
@@ -152,7 +160,7 @@ def format_success_response(data: Any,
     response: dict[str, Any] = {
         "success": True,
         "data": serialize_value(data),
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
 
     if message:
@@ -191,13 +199,14 @@ def format_table_list(tables: list[dict[str, Any]]) -> dict[str, Any]:
         "total_size_human": format_bytes(total_size),
         "metadata": {
             "has_size_info": any("size_bytes" in t for t in tables),
-            "timestamp": datetime.now().isoformat()
-        }
+            "timestamp": datetime.now().isoformat(),
+        },
     }
 
 
-def format_performance_stats(stats: dict[str, Any],
-                           query: str | None = None) -> dict[str, Any]:
+def format_performance_stats(
+    stats: dict[str, Any], query: str | None = None
+) -> dict[str, Any]:
     """Format performance statistics.
 
     Args:
@@ -209,7 +218,7 @@ def format_performance_stats(stats: dict[str, Any],
     """
     result = {
         "performance_stats": serialize_dict(stats),
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
 
     if query:
@@ -241,21 +250,21 @@ def serialize_value(value: Any) -> Any:
     """
     if value is None:
         return None
-    elif isinstance(value, str| int| float| bool):
+    elif isinstance(value, str | int | float | bool):
         return value
     elif isinstance(value, Decimal):
         return float(value)
-    elif isinstance(value, datetime| date):
+    elif isinstance(value, datetime | date):
         return value.isoformat()
     elif isinstance(value, time):
         return value.isoformat()
     elif isinstance(value, bytes):
-        return value.decode('utf-8', errors='replace')
-    elif isinstance(value, list| tuple):
+        return value.decode("utf-8", errors="replace")
+    elif isinstance(value, list | tuple):
         return [serialize_value(item) for item in value]
     elif isinstance(value, dict):
         return serialize_dict(value)
-    elif hasattr(value, '__dict__'):
+    elif hasattr(value, "__dict__"):
         return serialize_dict(value.__dict__)
     else:
         return str(value)
@@ -346,4 +355,4 @@ def truncate_text(text: str, max_length: int = 100, suffix: str = "...") -> str:
     if len(text) <= max_length:
         return text
 
-    return text[:max_length - len(suffix)] + suffix
+    return text[: max_length - len(suffix)] + suffix

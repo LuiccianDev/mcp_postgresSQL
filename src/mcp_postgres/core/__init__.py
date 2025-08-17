@@ -10,5 +10,5 @@ __all__ = [
     "MCPContextManager",
     "ToolExecutionContext",
     "MCPError",
-    "mcp_context"
+    "mcp_context",
 ]

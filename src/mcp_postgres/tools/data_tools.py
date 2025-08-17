@@ -26,12 +26,11 @@ from ..utils.validators import validate_column_name, validate_table_name
 logger = logging.getLogger(__name__)
 
 
-
 async def insert_data(
     table_name: str,
     data: dict[str, Any],
     return_columns: list[str] | None = None,
-    on_conflict: str = "error"
+    on_conflict: str = "error",
 ) -> dict[str, Any]:
     """Insert a single record into a table with validation and error handling.
 
@@ -81,7 +80,7 @@ async def insert_data(
         clean_values = sanitize_parameters(values)
 
         # Build parameterized INSERT query
-        placeholders = ", ".join(f"${i+1}" for i in range(len(columns)))
+        placeholders = ", ".join(f"${i + 1}" for i in range(len(columns)))
         column_list = ", ".join(columns)
 
         base_query = f"INSERT INTO {table_name} ({column_list}) VALUES ({placeholders})"
@@ -92,7 +91,9 @@ async def insert_data(
         elif on_conflict == "update":
             # Simple update strategy - update all non-key columns
             update_clauses = [f"{col} = EXCLUDED.{col}" for col in columns]
-            query = f"{base_query} ON CONFLICT DO UPDATE SET {', '.join(update_clauses)}"
+            query = (
+                f"{base_query} ON CONFLICT DO UPDATE SET {', '.join(update_clauses)}"
+            )
         else:  # on_conflict == "error"
             query = base_query
 
@@ -125,22 +126,26 @@ async def insert_data(
         # Format response
         if return_columns and result:
             # Convert result to dictionary
-            returned_data = dict(result) if hasattr(result, 'keys') else {}
+            returned_data = dict(result) if hasattr(result, "keys") else {}
             response_data = {
                 "inserted": True,
                 "table_name": table_name,
-                "returned_data": {k: serialize_value(v) for k, v in returned_data.items()},
+                "returned_data": {
+                    k: serialize_value(v) for k, v in returned_data.items()
+                },
                 "execution_time_ms": round(execution_time * 1000, 2),
                 "metadata": {
                     "conflict_resolution": on_conflict,
                     "columns_inserted": len(columns),
-                    "returned_columns": return_columns
-                }
+                    "returned_columns": return_columns,
+                },
             }
         else:
             # Parse status string for row count
             status_str = str(result) if result else "INSERT 0 0"
-            rows_affected = 1 if "INSERT" in status_str and not status_str.endswith("0") else 0
+            rows_affected = (
+                1 if "INSERT" in status_str and not status_str.endswith("0") else 0
+            )
 
             response_data = {
                 "inserted": rows_affected > 0,
@@ -150,15 +155,16 @@ async def insert_data(
                 "metadata": {
                     "conflict_resolution": on_conflict,
                     "columns_inserted": len(columns),
-                    "status": status_str
-                }
+                    "status": status_str,
+                },
             }
 
-        logger.info(f"Data inserted successfully into {table_name} in {execution_time:.3f}s")
+        logger.info(
+            f"Data inserted successfully into {table_name} in {execution_time:.3f}s"
+        )
 
         return format_success_response(
-            data=response_data,
-            message=f"Data inserted successfully into {table_name}"
+            data=response_data, message=f"Data inserted successfully into {table_name}"
         )
 
     except (ValidationError, SecurityError) as e:
@@ -178,7 +184,7 @@ async def update_data(
     data: dict[str, Any],
     where_conditions: dict[str, Any],
     return_columns: list[str] | None = None,
-    limit: int | None = None
+    limit: int | None = None,
 ) -> dict[str, Any]:
     """Update records in a table with conditional updates.
 
@@ -225,14 +231,16 @@ async def update_data(
         # Prepare SET clause
         set_columns = list(data.keys())
         set_values = list(data.values())
-        set_placeholders = [f"{col} = ${i+1}" for i, col in enumerate(set_columns)]
+        set_placeholders = [f"{col} = ${i + 1}" for i, col in enumerate(set_columns)]
         set_clause = ", ".join(set_placeholders)
 
         # Prepare WHERE clause
         where_columns = list(where_conditions.keys())
         where_values = list(where_conditions.values())
         where_start_idx = len(set_values)
-        where_placeholders = [f"{col} = ${where_start_idx + i + 1}" for i, col in enumerate(where_columns)]
+        where_placeholders = [
+            f"{col} = ${where_start_idx + i + 1}" for i, col in enumerate(where_columns)
+        ]
         where_clause = " AND ".join(where_placeholders)
 
         # Combine all parameters
@@ -285,8 +293,10 @@ async def update_data(
             returned_data = []
             if isinstance(result, list):
                 for row in result:
-                    row_dict = dict(row) if hasattr(row, 'keys') else {}
-                    returned_data.append({k: serialize_value(v) for k, v in row_dict.items()})
+                    row_dict = dict(row) if hasattr(row, "keys") else {}
+                    returned_data.append(
+                        {k: serialize_value(v) for k, v in row_dict.items()}
+                    )
 
             response_data = {
                 "updated": True,
@@ -298,8 +308,8 @@ async def update_data(
                     "columns_updated": len(set_columns),
                     "where_conditions": len(where_columns),
                     "returned_columns": return_columns,
-                    "limit_applied": limit
-                }
+                    "limit_applied": limit,
+                },
             }
         else:
             # Parse status string for row count
@@ -320,15 +330,17 @@ async def update_data(
                     "columns_updated": len(set_columns),
                     "where_conditions": len(where_columns),
                     "limit_applied": limit,
-                    "status": status_str
-                }
+                    "status": status_str,
+                },
             }
 
-        logger.info(f"Data updated successfully in {table_name}: {response_data['rows_affected']} rows in {execution_time:.3f}s")
+        logger.info(
+            f"Data updated successfully in {table_name}: {response_data['rows_affected']} rows in {execution_time:.3f}s"
+        )
 
         return format_success_response(
             data=response_data,
-            message=f"Updated {response_data['rows_affected']} rows in {table_name}"
+            message=f"Updated {response_data['rows_affected']} rows in {table_name}",
         )
 
     except (ValidationError, SecurityError) as e:
@@ -348,7 +360,7 @@ async def delete_data(
     where_conditions: dict[str, Any],
     return_columns: list[str] | None = None,
     limit: int | None = None,
-    confirm_delete: bool = False
+    confirm_delete: bool = False,
 ) -> dict[str, Any]:
     """Delete records from a table with safety confirmations.
 
@@ -402,7 +414,9 @@ async def delete_data(
         # Prepare WHERE clause
         where_columns = list(where_conditions.keys())
         where_values = list(where_conditions.values())
-        where_placeholders = [f"{col} = ${i+1}" for i, col in enumerate(where_columns)]
+        where_placeholders = [
+            f"{col} = ${i + 1}" for i, col in enumerate(where_columns)
+        ]
         where_clause = " AND ".join(where_placeholders)
 
         # Sanitize parameters
@@ -444,7 +458,6 @@ async def delete_data(
             query=query, parameters=clean_values, fetch_mode=fetch_mode
         )
 
-
         execution_time = time.time() - start_time
 
         # Format response
@@ -453,8 +466,10 @@ async def delete_data(
             returned_data = []
             if isinstance(result, list):
                 for row in result:
-                    row_dict = dict(row) if hasattr(row, 'keys') else {}
-                    returned_data.append({k: serialize_value(v) for k, v in row_dict.items()})
+                    row_dict = dict(row) if hasattr(row, "keys") else {}
+                    returned_data.append(
+                        {k: serialize_value(v) for k, v in row_dict.items()}
+                    )
 
             response_data = {
                 "deleted": True,
@@ -466,8 +481,8 @@ async def delete_data(
                     "where_conditions": len(where_columns),
                     "returned_columns": return_columns,
                     "limit_applied": limit,
-                    "confirmed": confirm_delete
-                }
+                    "confirmed": confirm_delete,
+                },
             }
         else:
             # Parse status string for row count
@@ -488,15 +503,17 @@ async def delete_data(
                     "where_conditions": len(where_columns),
                     "limit_applied": limit,
                     "confirmed": confirm_delete,
-                    "status": status_str
-                }
+                    "status": status_str,
+                },
             }
 
-        logger.info(f"Data deleted successfully from {table_name}: {response_data['rows_affected']} rows in {execution_time:.3f}s")
+        logger.info(
+            f"Data deleted successfully from {table_name}: {response_data['rows_affected']} rows in {execution_time:.3f}s"
+        )
 
         return format_success_response(
             data=response_data,
-            message=f"Deleted {response_data['rows_affected']} rows from {table_name}"
+            message=f"Deleted {response_data['rows_affected']} rows from {table_name}",
         )
 
     except (ValidationError, SecurityError) as e:
@@ -516,7 +533,7 @@ async def bulk_insert(
     data: list[dict[str, Any]],
     batch_size: int = 1000,
     on_conflict: str = "error",
-    return_summary: bool = True
+    return_summary: bool = True,
 ) -> dict[str, Any]:
     """Efficiently insert large datasets with batch processing.
 
@@ -591,7 +608,9 @@ async def bulk_insert(
         failed_batches = 0
         batch_errors = []
 
-        logger.info(f"Starting bulk insert of {total_records} records into {table_name} with batch size {batch_size}")
+        logger.info(
+            f"Starting bulk insert of {total_records} records into {table_name} with batch size {batch_size}"
+        )
 
         # Process data in batches
         for batch_start in range(0, total_records, batch_size):
@@ -615,13 +634,17 @@ async def bulk_insert(
 
                 for i in range(len(batch_data)):
                     start_idx = i * values_per_record
-                    placeholders = [f"${start_idx + j + 1}" for j in range(values_per_record)]
+                    placeholders = [
+                        f"${start_idx + j + 1}" for j in range(values_per_record)
+                    ]
                     value_groups.append(f"({', '.join(placeholders)})")
 
                 column_list = ", ".join(columns)
                 values_clause = ", ".join(value_groups)
 
-                base_query = f"INSERT INTO {table_name} ({column_list}) VALUES {values_clause}"
+                base_query = (
+                    f"INSERT INTO {table_name} ({column_list}) VALUES {values_clause}"
+                )
 
                 # Handle conflict resolution
                 if on_conflict == "ignore":
@@ -635,7 +658,9 @@ async def bulk_insert(
                 # Security validation of batch query
                 is_valid, error_msg = validate_query_permissions(query)
                 if not is_valid:
-                    raise SecurityError(f"Batch query security validation failed: {error_msg}")
+                    raise SecurityError(
+                        f"Batch query security validation failed: {error_msg}"
+                    )
 
                 # Execute batch
                 await connection_manager.execute_query(
@@ -653,7 +678,7 @@ async def bulk_insert(
                     "batch_number": batch_num,
                     "batch_start": batch_start,
                     "batch_size": len(batch_data),
-                    "error": str(batch_error)
+                    "error": str(batch_error),
                 }
                 batch_errors.append(error_info)
 
@@ -668,7 +693,11 @@ async def bulk_insert(
         execution_time = time.time() - start_time
 
         # Calculate success rate
-        success_rate = (successful_batches / (successful_batches + failed_batches)) * 100 if (successful_batches + failed_batches) > 0 else 0
+        success_rate = (
+            (successful_batches / (successful_batches + failed_batches)) * 100
+            if (successful_batches + failed_batches) > 0
+            else 0
+        )
 
         # Format response
         response_data = {
@@ -685,8 +714,12 @@ async def bulk_insert(
                 "conflict_resolution": on_conflict,
                 "columns_inserted": len(columns),
                 "batches_total": successful_batches + failed_batches,
-                "avg_batch_time_ms": round((execution_time * 1000) / max(successful_batches + failed_batches, 1), 2)
-            }
+                "avg_batch_time_ms": round(
+                    (execution_time * 1000)
+                    / max(successful_batches + failed_batches, 1),
+                    2,
+                ),
+            },
         }
 
         # Add detailed summary if requested
@@ -694,7 +727,9 @@ async def bulk_insert(
             response_data["summary"] = {
                 "columns": columns,
                 "records_per_batch": batch_size,
-                "processing_rate_per_sec": round(processed_records / max(execution_time, 0.001), 2)
+                "processing_rate_per_sec": round(
+                    processed_records / max(execution_time, 0.001), 2
+                ),
             }
 
             if batch_errors:
@@ -708,7 +743,7 @@ async def bulk_insert(
 
         return format_success_response(
             data=response_data,
-            message=f"Bulk inserted {processed_records} records into {table_name}"
+            message=f"Bulk inserted {processed_records} records into {table_name}",
         )
 
     except (ValidationError, SecurityError) as e:
@@ -721,6 +756,8 @@ async def bulk_insert(
         return format_error_response(
             mcp_error.error_code, str(mcp_error), mcp_error.details
         )
+
+
 # Tool schema definitions for MCP registration
 INSERT_DATA_SCHEMA = {
     "name": "insert_data",
@@ -730,28 +767,28 @@ INSERT_DATA_SCHEMA = {
         "properties": {
             "table_name": {
                 "type": "string",
-                "description": "Name of the table to insert data into"
+                "description": "Name of the table to insert data into",
             },
             "data": {
                 "type": "array",
                 "description": "Array of records to insert, each record is an object with column names as keys",
                 "items": {"type": "object"},
-                "minItems": 1
+                "minItems": 1,
             },
             "on_conflict": {
                 "type": "string",
                 "description": "How to handle conflicts",
                 "enum": ["error", "ignore", "update"],
-                "default": "error"
+                "default": "error",
             },
             "return_records": {
                 "type": "boolean",
                 "description": "Whether to return the inserted records",
-                "default": False
-            }
+                "default": False,
+            },
         },
-        "required": ["table_name", "data"]
-    }
+        "required": ["table_name", "data"],
+    },
 }
 
 UPDATE_DATA_SCHEMA = {
@@ -762,24 +799,24 @@ UPDATE_DATA_SCHEMA = {
         "properties": {
             "table_name": {
                 "type": "string",
-                "description": "Name of the table to update"
+                "description": "Name of the table to update",
             },
             "set_values": {
                 "type": "object",
-                "description": "Object with column names as keys and new values"
+                "description": "Object with column names as keys and new values",
             },
             "where_conditions": {
                 "type": "object",
-                "description": "Object with column names as keys and condition values"
+                "description": "Object with column names as keys and condition values",
             },
             "return_records": {
                 "type": "boolean",
                 "description": "Whether to return the updated records",
-                "default": False
-            }
+                "default": False,
+            },
         },
-        "required": ["table_name", "set_values", "where_conditions"]
-    }
+        "required": ["table_name", "set_values", "where_conditions"],
+    },
 }
 
 DELETE_DATA_SCHEMA = {
@@ -790,25 +827,25 @@ DELETE_DATA_SCHEMA = {
         "properties": {
             "table_name": {
                 "type": "string",
-                "description": "Name of the table to delete from"
+                "description": "Name of the table to delete from",
             },
             "where_conditions": {
                 "type": "object",
-                "description": "Object with column names as keys and condition values"
+                "description": "Object with column names as keys and condition values",
             },
             "confirm_delete": {
                 "type": "boolean",
                 "description": "Confirmation flag to prevent accidental deletions",
-                "default": False
+                "default": False,
             },
             "return_count": {
                 "type": "boolean",
                 "description": "Whether to return the count of deleted records",
-                "default": True
-            }
+                "default": True,
+            },
         },
-        "required": ["table_name", "where_conditions", "confirm_delete"]
-    }
+        "required": ["table_name", "where_conditions", "confirm_delete"],
+    },
 }
 
 BULK_INSERT_SCHEMA = {
@@ -819,30 +856,30 @@ BULK_INSERT_SCHEMA = {
         "properties": {
             "table_name": {
                 "type": "string",
-                "description": "Name of the table to insert data into"
+                "description": "Name of the table to insert data into",
             },
             "data": {
                 "type": "array",
                 "description": "Array of records to insert in bulk",
                 "items": {"type": "object"},
-                "minItems": 1
+                "minItems": 1,
             },
             "batch_size": {
                 "type": "integer",
                 "description": "Number of records to insert per batch",
                 "default": 1000,
                 "minimum": 1,
-                "maximum": 10000
+                "maximum": 10000,
             },
             "on_conflict": {
                 "type": "string",
                 "description": "How to handle conflicts during bulk insert",
                 "enum": ["error", "ignore", "update"],
-                "default": "error"
-            }
+                "default": "error",
+            },
         },
-        "required": ["table_name", "data"]
-    }
+        "required": ["table_name", "data"],
+    },
 }
 
 # Export tool functions and schemas

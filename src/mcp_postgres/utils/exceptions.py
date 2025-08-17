@@ -17,10 +17,12 @@ class MCPPostgresError(Exception):
         details: Additional error context and details
     """
 
-    def __init__(self,
-                 message: str,
-                 error_code: str = "GENERAL_ERROR",
-                 details: dict[str, Any] | None = None):
+    def __init__(
+        self,
+        message: str,
+        error_code: str = "GENERAL_ERROR",
+        details: dict[str, Any] | None = None,
+    ):
         super().__init__(message)
         self.message = message
         self.error_code = error_code
@@ -31,7 +33,7 @@ class MCPPostgresError(Exception):
         return {
             "code": self.error_code,
             "message": self.message,
-            "details": self.details
+            "details": self.details,
         }
 
 
@@ -40,9 +42,7 @@ class ConnectionError(MCPPostgresError):
 
     def __init__(self, message: str, details: dict[str, Any] | None = None):
         super().__init__(
-            message=message,
-            error_code="CONNECTION_ERROR",
-            details=details
+            message=message, error_code="CONNECTION_ERROR", details=details
         )
 
 
@@ -69,11 +69,13 @@ class ConnectionTimeoutError(ConnectionError):
 class QueryError(MCPPostgresError):
     """Base class for query execution errors."""
 
-    def __init__(self,
-                 message: str,
-                 query: str | None = None,
-                 parameters: list | None = None,
-                 details: dict[str, Any] | None = None):
+    def __init__(
+        self,
+        message: str,
+        query: str | None = None,
+        parameters: list | None = None,
+        details: dict[str, Any] | None = None,
+    ):
         query_details = details or {}
         if query:
             query_details["query"] = query
@@ -81,20 +83,20 @@ class QueryError(MCPPostgresError):
             query_details["parameters"] = parameters
 
         super().__init__(
-            message=message,
-            error_code="QUERY_ERROR",
-            details=query_details
+            message=message, error_code="QUERY_ERROR", details=query_details
         )
 
 
 class QuerySyntaxError(QueryError):
     """Raised when SQL query has syntax errors."""
 
-    def __init__(self,
-                 message: str,
-                 query: str | None = None,
-                 line: int | None = None,
-                 position: int | None = None):
+    def __init__(
+        self,
+        message: str,
+        query: str | None = None,
+        line: int | None = None,
+        position: int | None = None,
+    ):
         details: dict[str, Any] = {}
         if line:
             details["line"] = line
@@ -108,11 +110,13 @@ class QuerySyntaxError(QueryError):
 class QueryExecutionError(QueryError):
     """Raised when query execution fails."""
 
-    def __init__(self,
-                 message: str,
-                 query: str | None = None,
-                 parameters: list | None = None,
-                 postgres_error_code: str | None = None):
+    def __init__(
+        self,
+        message: str,
+        query: str | None = None,
+        parameters: list | None = None,
+        postgres_error_code: str | None = None,
+    ):
         details: dict[str, Any] = {}
         if postgres_error_code:
             details["postgres_error_code"] = postgres_error_code
@@ -124,10 +128,12 @@ class QueryExecutionError(QueryError):
 class QueryTimeoutError(QueryError):
     """Raised when query execution times out."""
 
-    def __init__(self,
-                 message: str,
-                 query: str | None = None,
-                 timeout_seconds: float | None = None):
+    def __init__(
+        self,
+        message: str,
+        query: str | None = None,
+        timeout_seconds: float | None = None,
+    ):
         details: dict[str, Any] = {}
         if timeout_seconds:
             details["timeout_seconds"] = timeout_seconds
@@ -139,11 +145,13 @@ class QueryTimeoutError(QueryError):
 class ValidationError(MCPPostgresError):
     """Raised when input validation fails."""
 
-    def __init__(self,
-                 message: str,
-                 field_name: str | None = None,
-                 field_value: Any | None = None,
-                 validation_rule: str | None = None):
+    def __init__(
+        self,
+        message: str,
+        field_name: str | None = None,
+        field_value: Any | None = None,
+        validation_rule: str | None = None,
+    ):
         details: dict[str, Any] = {}
         if field_name:
             details["field_name"] = field_name
@@ -153,19 +161,19 @@ class ValidationError(MCPPostgresError):
             details["validation_rule"] = validation_rule
 
         super().__init__(
-            message=message,
-            error_code="VALIDATION_ERROR",
-            details=details
+            message=message, error_code="VALIDATION_ERROR", details=details
         )
 
 
 class ParameterValidationError(ValidationError):
     """Raised when query parameters fail validation."""
 
-    def __init__(self,
-                 message: str,
-                 parameter_index: int | None = None,
-                 parameter_value: Any | None = None):
+    def __init__(
+        self,
+        message: str,
+        parameter_index: int | None = None,
+        parameter_value: Any | None = None,
+    ):
         details: dict[str, Any] = {}
         if parameter_index is not None:
             details["parameter_index"] = parameter_index
@@ -178,30 +186,30 @@ class ParameterValidationError(ValidationError):
 class SecurityError(MCPPostgresError):
     """Raised when security validation fails."""
 
-    def __init__(self,
-                 message: str,
-                 security_rule: str | None = None,
-                 attempted_operation: str | None = None):
+    def __init__(
+        self,
+        message: str,
+        security_rule: str | None = None,
+        attempted_operation: str | None = None,
+    ):
         details: dict[str, Any] = {}
         if security_rule:
             details["security_rule"] = security_rule
         if attempted_operation:
             details["attempted_operation"] = attempted_operation
 
-        super().__init__(
-            message=message,
-            error_code="SECURITY_ERROR",
-            details=details
-        )
+        super().__init__(message=message, error_code="SECURITY_ERROR", details=details)
 
 
 class PermissionError(SecurityError):
     """Raised when operation lacks required permissions."""
 
-    def __init__(self,
-                 message: str,
-                 required_permission: str | None = None,
-                 resource: str | None = None):
+    def __init__(
+        self,
+        message: str,
+        required_permission: str | None = None,
+        resource: str | None = None,
+    ):
         details: dict[str, Any] = {}
         if required_permission:
             details["required_permission"] = required_permission
@@ -216,10 +224,12 @@ class PermissionError(SecurityError):
 class SQLInjectionError(SecurityError):
     """Raised when potential SQL injection is detected."""
 
-    def __init__(self,
-                 message: str,
-                 dangerous_pattern: str | None = None,
-                 query_fragment: str | None = None):
+    def __init__(
+        self,
+        message: str,
+        dangerous_pattern: str | None = None,
+        query_fragment: str | None = None,
+    ):
         details: dict[str, Any] = {}
         if dangerous_pattern:
             details["dangerous_pattern"] = dangerous_pattern
@@ -234,10 +244,12 @@ class SQLInjectionError(SecurityError):
 class ConfigurationError(MCPPostgresError):
     """Raised when configuration is invalid or missing."""
 
-    def __init__(self,
-                 message: str,
-                 config_key: str | None = None,
-                 config_value: str | None = None):
+    def __init__(
+        self,
+        message: str,
+        config_key: str | None = None,
+        config_value: str | None = None,
+    ):
         details: dict[str, Any] = {}
         if config_key:
             details["config_key"] = config_key
@@ -245,38 +257,32 @@ class ConfigurationError(MCPPostgresError):
             details["config_value"] = config_value
 
         super().__init__(
-            message=message,
-            error_code="CONFIGURATION_ERROR",
-            details=details
+            message=message, error_code="CONFIGURATION_ERROR", details=details
         )
 
 
 class DatabaseError(MCPPostgresError):
     """Raised when database-level errors occur."""
 
-    def __init__(self,
-                 message: str,
-                 database_name: str | None = None,
-                 postgres_error_code: str | None = None):
+    def __init__(
+        self,
+        message: str,
+        database_name: str | None = None,
+        postgres_error_code: str | None = None,
+    ):
         details: dict[str, Any] = {}
         if database_name:
             details["database_name"] = database_name
         if postgres_error_code:
             details["postgres_error_code"] = postgres_error_code
 
-        super().__init__(
-            message=message,
-            error_code="DATABASE_ERROR",
-            details=details
-        )
+        super().__init__(message=message, error_code="DATABASE_ERROR", details=details)
 
 
 class TableNotFoundError(DatabaseError):
     """Raised when referenced table doesn't exist."""
 
-    def __init__(self,
-                 table_name: str,
-                 schema_name: str | None = None):
+    def __init__(self, table_name: str, schema_name: str | None = None):
         message = f"Table '{table_name}' not found"
         if schema_name:
             message = f"Table '{schema_name}.{table_name}' not found"
@@ -293,9 +299,7 @@ class TableNotFoundError(DatabaseError):
 class ColumnNotFoundError(DatabaseError):
     """Raised when referenced column doesn't exist."""
 
-    def __init__(self,
-                 column_name: str,
-                 table_name: str | None = None):
+    def __init__(self, column_name: str, table_name: str | None = None):
         message = f"Column '{column_name}' not found"
         if table_name:
             message = f"Column '{column_name}' not found in table '{table_name}'"
@@ -312,30 +316,32 @@ class ColumnNotFoundError(DatabaseError):
 class TransactionError(MCPPostgresError):
     """Raised when transaction operations fail."""
 
-    def __init__(self,
-                 message: str,
-                 transaction_state: str | None = None,
-                 rollback_attempted: bool = False):
+    def __init__(
+        self,
+        message: str,
+        transaction_state: str | None = None,
+        rollback_attempted: bool = False,
+    ):
         details: dict[str, Any] = {}
         if transaction_state:
             details["transaction_state"] = transaction_state
         details["rollback_attempted"] = rollback_attempted
 
         super().__init__(
-            message=message,
-            error_code="TRANSACTION_ERROR",
-            details=details
+            message=message, error_code="TRANSACTION_ERROR", details=details
         )
 
 
 class DataIntegrityError(MCPPostgresError):
     """Raised when data integrity constraints are violated."""
 
-    def __init__(self,
-                 message: str,
-                 constraint_name: str | None = None,
-                 constraint_type: str | None = None,
-                 table_name: str | None = None):
+    def __init__(
+        self,
+        message: str,
+        constraint_name: str | None = None,
+        constraint_type: str | None = None,
+        table_name: str | None = None,
+    ):
         details: dict[str, Any] = {}
         if constraint_name:
             details["constraint_name"] = constraint_name
@@ -345,51 +351,46 @@ class DataIntegrityError(MCPPostgresError):
             details["table_name"] = table_name
 
         super().__init__(
-            message=message,
-            error_code="DATA_INTEGRITY_ERROR",
-            details=details
+            message=message, error_code="DATA_INTEGRITY_ERROR", details=details
         )
 
 
 class ToolError(MCPPostgresError):
     """Raised when MCP tool execution fails."""
 
-    def __init__(self,
-                 message: str,
-                 tool_name: str | None = None,
-                 tool_parameters: dict[str, Any] | None = None):
+    def __init__(
+        self,
+        message: str,
+        tool_name: str | None = None,
+        tool_parameters: dict[str, Any] | None = None,
+    ):
         details: dict[str, Any] = {}
         if tool_name:
             details["tool_name"] = tool_name
         if tool_parameters:
             details["tool_parameters"] = tool_parameters
 
-        super().__init__(
-            message=message,
-            error_code="TOOL_ERROR",
-            details=details
-        )
+        super().__init__(message=message, error_code="TOOL_ERROR", details=details)
 
 
 class ToolNotFoundError(ToolError):
     """Raised when requested MCP tool doesn't exist."""
 
     def __init__(self, tool_name: str):
-        super().__init__(
-            message=f"Tool '{tool_name}' not found",
-            tool_name=tool_name
-        )
+        super().__init__(message=f"Tool '{tool_name}' not found", tool_name=tool_name)
         self.error_code = "TOOL_NOT_FOUND_ERROR"
 
 
 class ToolParameterError(ToolError):
     """Raised when tool parameters are invalid."""
 
-    def __init__(self,
-                 message: str,
-                 tool_name: str,
-                 parameter_name: str | None = None,
-                 parameter_value: Any | None = None):
+    def __init__(
+        self,
+        message: str,
+        tool_name: str,
+        parameter_name: str | None = None,
+        parameter_value: Any | None = None,
+    ):
         details: dict[str, Any] = {"tool_name": tool_name}
         if parameter_name:
             details["parameter_name"] = parameter_name
@@ -401,9 +402,9 @@ class ToolParameterError(ToolError):
         self.details.update(details)
 
 
-def handle_postgres_error(pg_error: Exception,
-                         query: str | None = None,
-                         parameters: list | None = None) -> MCPPostgresError:
+def handle_postgres_error(
+    pg_error: Exception, query: str | None = None, parameters: list | None = None
+) -> MCPPostgresError:
     """Convert PostgreSQL errors to appropriate MCP Postgres exceptions.
 
     Args:
@@ -417,31 +418,31 @@ def handle_postgres_error(pg_error: Exception,
     error_message = str(pg_error)
 
     # Map common PostgreSQL error codes to our exceptions
-    if hasattr(pg_error, 'sqlstate'):
+    if hasattr(pg_error, "sqlstate"):
         sqlstate = pg_error.sqlstate
 
         # Connection errors (08xxx)
-        if sqlstate.startswith('08'):
+        if sqlstate.startswith("08"):
             return ConnectionError(error_message, {"postgres_sqlstate": sqlstate})
 
         # Syntax errors (42601)
-        elif sqlstate == '42601':
+        elif sqlstate == "42601":
             return QuerySyntaxError(error_message, query)
 
         # Undefined table (42P01)
-        elif sqlstate == '42P01':
+        elif sqlstate == "42P01":
             return TableNotFoundError("Table referenced in query", None)
 
         # Undefined column (42703)
-        elif sqlstate == '42703':
+        elif sqlstate == "42703":
             return ColumnNotFoundError("Column referenced in query", None)
 
         # Integrity constraint violation (23xxx)
-        elif sqlstate.startswith('23'):
+        elif sqlstate.startswith("23"):
             return DataIntegrityError(error_message, None, "constraint_violation")
 
         # Transaction errors (25xxx)
-        elif sqlstate.startswith('25'):
+        elif sqlstate.startswith("25"):
             return TransactionError(error_message)
 
     # Default to generic query execution error

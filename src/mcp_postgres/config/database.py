@@ -40,9 +40,7 @@ class DatabaseConfig:
             "min_size": 1,
             "max_size": self.pool_size,
             "command_timeout": self.pool_timeout,
-            "server_settings": {
-                "application_name": "mcp_postgres_server"
-            }
+            "server_settings": {"application_name": "mcp_postgres_server"},
         }
 
 
@@ -55,7 +53,9 @@ def parse_database_url(database_url: str) -> DatabaseConfig:
         parsed = urlparse(database_url)
 
         if parsed.scheme not in ("postgresql", "postgres"):
-            raise ValueError("DATABASE_URL must use postgresql:// or postgres:// scheme")
+            raise ValueError(
+                "DATABASE_URL must use postgresql:// or postgres:// scheme"
+            )
 
         return DatabaseConfig(
             host=parsed.hostname or "localhost",

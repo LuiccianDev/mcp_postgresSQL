@@ -1,6 +1,5 @@
 """MCP context management for MCP Postgres server."""
 
-import logging
 import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -9,9 +8,10 @@ from typing import Any
 from uuid import uuid4
 
 from ..config.settings import server_config
+from ..utils.logging import LogContext, PerformanceMetrics, get_logger
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -46,10 +46,7 @@ class MCPError:
 
     def to_dict(self) -> dict[str, Any]:
         """Convert error to dictionary format."""
-        error_dict : dict[str, Any] = {
-            "code": self.code,
-            "message": self.message
-        }
+        error_dict: dict[str, Any] = {"code": self.code, "message": self.message}
         if self.details:
             error_dict["details"] = self.details
         return error_dict
@@ -66,14 +63,12 @@ class MCPContextManager:
             "successful_executions": 0,
             "failed_executions": 0,
             "total_execution_time": 0.0,
-            "tool_usage_count": {}
+            "tool_usage_count": {},
         }
 
     @asynccontextmanager
     async def tool_execution_context(
-        self,
-        tool_name: str,
-        parameters: dict[str, Any] | None = None
+        self, tool_name: str, parameters: dict[str, Any] | None = None
     ) -> AsyncGenerator[ToolExecutionContext]:
         """Context manager for tool execution with automatic logging and error handling.
 
@@ -85,20 +80,26 @@ class MCPContextManager:
             ToolExecutionContext: Context object for the tool execution
         """
         parameters = parameters or {}
-        context = ToolExecutionContext(
-            tool_name=tool_name,
-            parameters=parameters
-        )
+        context = ToolExecutionContext(tool_name=tool_name, parameters=parameters)
 
         # Store active context
         self._active_contexts[context.execution_id] = context
 
+        # Create log context
+        log_context = LogContext(tool_name=tool_name, operation="tool_execution")
+
         # Log tool execution start
-        logger.info(
-            f"Starting tool execution: {tool_name} "
-            f"(execution_id: {context.execution_id})"
-        )
-        logger.debug(f"Tool parameters: {parameters}")
+        with logger.log_context(log_context):
+            logger.info(
+                f"Starting tool execution: {tool_name}",
+                log_context,
+                {
+                    "execution_id": context.execution_id,
+                    "parameters": parameters
+                    if server_config.log_query_parameters
+                    else None,
+                },
+            )
 
         # Update usage statistics
         self._execution_stats["total_executions"] += 1
@@ -117,11 +118,24 @@ class MCPContextManager:
             self._execution_stats["successful_executions"] += 1
             self._execution_stats["total_execution_time"] += context.execution_time or 0
 
-            # Log successful completion
+            # Log successful completion with performance metrics
+            if context.execution_time:
+                metrics = PerformanceMetrics(
+                    execution_time_ms=context.execution_time * 1000,
+                    query_count=1,
+                    result_size=context.result_size or 0,
+                )
+                logger.log_performance(
+                    f"tool_execution_{tool_name}", metrics, log_context
+                )
+
             logger.info(
-                f"Tool execution completed successfully: {tool_name} "
-                f"(execution_id: {context.execution_id}, "
-                f"duration: {context.execution_time:.3f}s)"
+                f"Tool execution completed successfully: {tool_name}",
+                log_context,
+                {
+                    "execution_id": context.execution_id,
+                    "duration_ms": round((context.execution_time or 0) * 1000, 2),
+                },
             )
 
         except Exception as e:
@@ -133,12 +147,15 @@ class MCPContextManager:
             # Update failure statistics
             self._execution_stats["failed_executions"] += 1
 
-            # Log error
-            logger.error(
-                f"Tool execution failed: {tool_name} "
-                f"(execution_id: {context.execution_id}, "
-                f"duration: {context.execution_time:.3f}s, "
-                f"error: {str(e)})"
+            # Log error with context
+            logger.log_error(
+                error=e,
+                operation=f"tool_execution_{tool_name}",
+                context=log_context,
+                additional_data={
+                    "execution_id": context.execution_id,
+                    "duration_ms": round((context.execution_time or 0) * 1000, 2),
+                },
             )
 
             # Re-raise the exception
@@ -153,7 +170,7 @@ class MCPContextManager:
         error_code: str,
         message: str,
         details: dict[str, Any] | None = None,
-        original_error: Exception | None = None
+        original_error: Exception | None = None,
     ) -> MCPError:
         """Create a structured MCP error response.
 
@@ -169,14 +186,10 @@ class MCPContextManager:
         if original_error and not details:
             details = {
                 "error_type": type(original_error).__name__,
-                "original_message": str(original_error)
+                "original_message": str(original_error),
             }
 
-        error = MCPError(
-            code=error_code,
-            message=message,
-            details=details
-        )
+        error = MCPError(code=error_code, message=message, details=details)
 
         # Log the error creation
         logger.debug(f"Created MCP error: {error_code} - {message}")
@@ -200,35 +213,35 @@ class MCPContextManager:
                 "DATABASE_CONNECTION_ERROR",
                 "Failed to connect to database",
                 {"connection_error": error_message},
-                error
+                error,
             )
         elif "syntax error" in error_message.lower():
             return self.create_mcp_error(
                 "SQL_SYNTAX_ERROR",
                 "SQL query contains syntax errors",
                 {"sql_error": error_message},
-                error
+                error,
             )
         elif "permission denied" in error_message.lower():
             return self.create_mcp_error(
                 "PERMISSION_DENIED",
                 "Insufficient permissions for database operation",
                 {"permission_error": error_message},
-                error
+                error,
             )
         elif "does not exist" in error_message.lower():
             return self.create_mcp_error(
                 "RESOURCE_NOT_FOUND",
                 "Requested database resource does not exist",
                 {"resource_error": error_message},
-                error
+                error,
             )
         else:
             return self.create_mcp_error(
                 "DATABASE_ERROR",
                 "Database operation failed",
                 {"database_error": error_message},
-                error
+                error,
             )
 
     def handle_validation_error(self, error: Exception) -> MCPError:
@@ -244,7 +257,7 @@ class MCPContextManager:
             "VALIDATION_ERROR",
             "Input validation failed",
             {"validation_error": str(error)},
-            error
+            error,
         )
 
     def handle_security_error(self, error: Exception) -> MCPError:
@@ -260,7 +273,7 @@ class MCPContextManager:
             "SECURITY_ERROR",
             "Security validation failed",
             {"security_error": str(error)},
-            error
+            error,
         )
 
     def handle_generic_error(self, error: Exception) -> MCPError:
@@ -276,7 +289,7 @@ class MCPContextManager:
             "INTERNAL_ERROR",
             "An internal error occurred",
             {"internal_error": str(error)},
-            error
+            error,
         )
 
     def get_execution_stats(self) -> dict[str, Any]:
@@ -287,11 +300,11 @@ class MCPContextManager:
         """
         stats = self._execution_stats.copy()
         stats["active_executions"] = len(self._active_contexts)
-        stats["success_rate"] = (
-            stats["successful_executions"] / max(stats["total_executions"], 1)
+        stats["success_rate"] = stats["successful_executions"] / max(
+            stats["total_executions"], 1
         )
-        stats["average_execution_time"] = (
-            stats["total_execution_time"] / max(stats["successful_executions"], 1)
+        stats["average_execution_time"] = stats["total_execution_time"] / max(
+            stats["successful_executions"], 1
         )
         return stats
 
@@ -306,7 +319,7 @@ class MCPContextManager:
                 "tool_name": context.tool_name,
                 "start_time": context.start_time,
                 "running_time": time.time() - context.start_time,
-                "parameters": context.parameters
+                "parameters": context.parameters,
             }
             for execution_id, context in self._active_contexts.items()
         }
@@ -317,7 +330,7 @@ class MCPContextManager:
         parameters: dict[str, Any],
         success: bool = True,
         execution_time: float | None = None,
-        result_size: int | None = None
+        result_size: int | None = None,
     ) -> None:
         """Log tool usage for monitoring and analytics.
 
@@ -333,7 +346,7 @@ class MCPContextManager:
             "success": success,
             "execution_time": execution_time,
             "result_size": result_size,
-            "parameter_count": len(parameters)
+            "parameter_count": len(parameters),
         }
 
         if server_config.debug:
@@ -348,7 +361,7 @@ class MCPContextManager:
             "successful_executions": 0,
             "failed_executions": 0,
             "total_execution_time": 0.0,
-            "tool_usage_count": {}
+            "tool_usage_count": {},
         }
         logger.info("Execution statistics reset")
 

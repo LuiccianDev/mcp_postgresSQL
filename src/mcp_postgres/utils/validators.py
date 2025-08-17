@@ -25,7 +25,7 @@ def validate_table_name(table_name: str) -> bool:
         raise ValueError("Table name must be a non-empty string")
 
     # PostgreSQL identifier rules: start with letter/underscore, contain letters/digits/underscores
-    if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', table_name):
+    if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", table_name):
         raise ValueError(f"Invalid table name format: {table_name}")
 
     # Check length limit (PostgreSQL max identifier length is 63)
@@ -51,7 +51,7 @@ def validate_column_name(column_name: str) -> bool:
         raise ValueError("Column name must be a non-empty string")
 
     # Same rules as table names
-    if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', column_name):
+    if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", column_name):
         raise ValueError(f"Invalid column name format: {column_name}")
 
     if len(column_name) > 63:
@@ -79,7 +79,9 @@ def validate_query_parameters(parameters: list[Any]) -> list[Any]:
 
     for i, param in enumerate(parameters):
         # Allow None, basic types, and Decimal
-        if param is None or isinstance(param, str | int | float | bool | Decimal | bytes):
+        if param is None or isinstance(
+            param, str | int | float | bool | Decimal | bytes
+        ):
             validated_params.append(param)
         else:
             raise ValueError(f"Invalid parameter type at index {i}: {type(param)}")
@@ -87,7 +89,9 @@ def validate_query_parameters(parameters: list[Any]) -> list[Any]:
     return validated_params
 
 
-def validate_limit_offset(limit: int | None = None, offset: int | None = None) -> tuple[int | None, int | None]:
+def validate_limit_offset(
+    limit: int | None = None, offset: int | None = None
+) -> tuple[int | None, int | None]:
     """Validate LIMIT and OFFSET values.
 
     Args:
@@ -132,18 +136,18 @@ def validate_sql_query_pattern(query: str) -> bool:
 
     # Check for dangerous patterns
     dangerous_patterns = [
-        r'\bDROP\s+TABLE\b',
-        r'\bDROP\s+DATABASE\b',
-        r'\bTRUNCATE\b',
-        r'\bALTER\s+TABLE\b',
-        r'\bCREATE\s+TABLE\b',
-        r'\bGRANT\b',
-        r'\bREVOKE\b',
-        r';\s*DROP\b',
-        r';\s*DELETE\b',
-        r';\s*UPDATE\b',
-        r'--',  # SQL comments
-        r'/\*',  # Block comments
+        r"\bDROP\s+TABLE\b",
+        r"\bDROP\s+DATABASE\b",
+        r"\bTRUNCATE\b",
+        r"\bALTER\s+TABLE\b",
+        r"\bCREATE\s+TABLE\b",
+        r"\bGRANT\b",
+        r"\bREVOKE\b",
+        r";\s*DROP\b",
+        r";\s*DELETE\b",
+        r";\s*UPDATE\b",
+        r"--",  # SQL comments
+        r"/\*",  # Block comments
     ]
 
     for pattern in dangerous_patterns:
@@ -170,21 +174,23 @@ def validate_data_type(value: Any, expected_type: str) -> bool:
         return True  # NULL is valid for any type
 
     type_validators = {
-        'integer': lambda v: isinstance(v, int),
-        'bigint': lambda v: isinstance(v, int),
-        'smallint': lambda v: isinstance(v, int) and -32768 <= v <= 32767,
-        'numeric': lambda v: isinstance(v, int| float | Decimal),
-        'decimal': lambda v: isinstance(v, int| float | Decimal),
-        'real': lambda v: isinstance(v, int| float),
-        'double precision': lambda v: isinstance(v, int| float),
-        'text': lambda v: isinstance(v, str),
-        'varchar': lambda v: isinstance(v, str),
-        'char': lambda v: isinstance(v, str),
-        'boolean': lambda v: isinstance(v, bool),
-        'date': lambda v: isinstance(v, str),  # Simplified - would need proper date parsing
-        'timestamp': lambda v: isinstance(v, str),  # Simplified
-        'json': lambda v: isinstance(v, str | dict | list),
-        'jsonb': lambda v: isinstance(v, str | dict | list),
+        "integer": lambda v: isinstance(v, int),
+        "bigint": lambda v: isinstance(v, int),
+        "smallint": lambda v: isinstance(v, int) and -32768 <= v <= 32767,
+        "numeric": lambda v: isinstance(v, int | float | Decimal),
+        "decimal": lambda v: isinstance(v, int | float | Decimal),
+        "real": lambda v: isinstance(v, int | float),
+        "double precision": lambda v: isinstance(v, int | float),
+        "text": lambda v: isinstance(v, str),
+        "varchar": lambda v: isinstance(v, str),
+        "char": lambda v: isinstance(v, str),
+        "boolean": lambda v: isinstance(v, bool),
+        "date": lambda v: isinstance(
+            v, str
+        ),  # Simplified - would need proper date parsing
+        "timestamp": lambda v: isinstance(v, str),  # Simplified
+        "json": lambda v: isinstance(v, str | dict | list),
+        "jsonb": lambda v: isinstance(v, str | dict | list),
     }
 
     validator = type_validators.get(expected_type.lower())
@@ -210,26 +216,26 @@ def validate_connection_params(params: dict[str, Any]) -> dict[str, Any]:
     Raises:
         ValueError: If required parameters are missing or invalid
     """
-    required_params = ['host', 'database', 'user']
+    required_params = ["host", "database", "user"]
 
     for param in required_params:
         if param not in params or not params[param]:
             raise ValueError(f"Missing required connection parameter: {param}")
 
     # Validate host format (basic check)
-    host = params['host']
-    if not isinstance(host, str) or not re.match(r'^[a-zA-Z0-9.-]+$', host):
+    host = params["host"]
+    if not isinstance(host, str) or not re.match(r"^[a-zA-Z0-9.-]+$", host):
         raise ValueError(f"Invalid host format: {host}")
 
     # Validate port if provided
-    if 'port' in params:
-        port = params['port']
+    if "port" in params:
+        port = params["port"]
         if not isinstance(port, int) or not (1 <= port <= 65535):
             raise ValueError(f"Invalid port number: {port}")
 
     # Validate database name
-    database = params['database']
-    if not isinstance(database, str) or not re.match(r'^[a-zA-Z0-9_-]+$', database):
+    database = params["database"]
+    if not isinstance(database, str) or not re.match(r"^[a-zA-Z0-9_-]+$", database):
         raise ValueError(f"Invalid database name: {database}")
 
     return params
@@ -255,7 +261,6 @@ def sanitize_string_input(input_str: str, max_length: int = 1000) -> str:
         raise ValueError(f"Input too long (max {max_length} characters)")
 
     # Remove null bytes and control characters except newlines and tabs
-    sanitized = ''.join(char for char in input_str
-                       if ord(char) >= 32 or char in '\n\t')
+    sanitized = "".join(char for char in input_str if ord(char) >= 32 or char in "\n\t")
 
     return sanitized

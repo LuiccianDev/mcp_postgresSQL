@@ -1,31 +1,31 @@
 """Query execution tools for MCP Postgres server."""
 
-import logging
 import time
 from typing import Any, Literal
 
 from ..core.connection import connection_manager
 from ..core.security import sanitize_parameters, validate_query_permissions
+from ..utils.error_handler import handle_tool_errors
 from ..utils.exceptions import (
     SecurityError,
     ValidationError,
-    handle_postgres_error,
 )
 from ..utils.formatters import (
-    format_error_response,
     format_query_result,
     format_success_response,
     serialize_value,
 )
+from ..utils.logging import LogContext, PerformanceMetrics, get_logger
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
+@handle_tool_errors(tool_name="execute_query", operation="query_execution")
 async def execute_query(
     query: str,
     parameters: list[Any] | None = None,
-    fetch_mode: Literal["all", "one", "none", "val"] = "all"
+    fetch_mode: Literal["all", "one", "none", "val"] = "all",
 ) -> dict[str, Any]:
     """Execute a parameterized SQL query safely.
 
@@ -49,109 +49,115 @@ async def execute_query(
         SecurityError: If query fails security validation
         QueryExecutionError: If query execution fails
     """
-    try:
-        # Validate inputs
-        if not query or not query.strip():
-            raise ValidationError("Query cannot be empty")
+    # Create log context
+    context = LogContext(tool_name="execute_query", operation="query_execution")
 
-        if fetch_mode not in {"all", "one", "none", "val"}:
-            raise ValidationError(
-                f"Invalid fetch_mode: {fetch_mode}. Must be one of: all, one, none, val"
+    # Validate inputs
+    if not query or not query.strip():
+        raise ValidationError("Query cannot be empty")
+
+    if fetch_mode not in {"all", "one", "none", "val"}:
+        raise ValidationError(
+            f"Invalid fetch_mode: {fetch_mode}. Must be one of: all, one, none, val"
+        )
+
+    # Security validation
+    is_valid, error_msg = validate_query_permissions(query)
+    if not is_valid:
+        raise SecurityError(f"Query security validation failed: {error_msg}")
+
+    # Sanitize parameters
+    clean_parameters = sanitize_parameters(parameters or [])
+
+    # Record start time for performance metrics
+    start_time = time.time()
+
+    # Log query execution
+    logger.log_query(query=query, parameters=clean_parameters, context=context)
+
+    # Execute query
+    result: Any
+    if fetch_mode == "all":
+        result = await connection_manager.execute_query(query, clean_parameters, "all")
+    elif fetch_mode == "one":
+        result = await connection_manager.execute_query(query, clean_parameters, "one")
+    elif fetch_mode == "val":
+        result = await connection_manager.execute_query(query, clean_parameters, "val")
+    else:  # fetch_mode == "none"
+        result = await connection_manager.execute_query(query, clean_parameters, "none")
+
+    execution_time = time.time() - start_time
+
+    # Format response based on fetch mode
+    if fetch_mode == "all":
+        # Convert asyncpg Records to dictionaries
+        rows = []
+        columns = []
+        if result and isinstance(result, list):
+            for row in result:
+                # Handle both real asyncpg Records and mock objects
+                if hasattr(row, "_asdict"):
+                    rows.append(row._asdict())
+                elif hasattr(row, "items"):
+                    rows.append(dict(row))
+                else:
+                    rows.append({"value": row})
+            columns = (
+                list(result[0].keys()) if result and hasattr(result[0], "keys") else []
             )
 
-        # Security validation
-        is_valid, error_msg = validate_query_permissions(query)
-        if not is_valid:
-            raise SecurityError(f"Query security validation failed: {error_msg}")
+        formatted_result = format_query_result(
+            rows=rows, columns=columns, execution_time=execution_time
+        )
+        result_size = len(rows)
 
-        # Sanitize parameters
-        clean_parameters = sanitize_parameters(parameters or [])
-
-        # Record start time for performance metrics
-        start_time = time.time()
-
-        # Execute query
-        result: Any
-        if fetch_mode == "all":
-            result = await connection_manager.execute_query(query, clean_parameters, "all")
-        elif fetch_mode == "one":
-            result = await connection_manager.execute_query(query, clean_parameters, "one")
-        elif fetch_mode == "val":
-            result = await connection_manager.execute_query(query, clean_parameters, "val")
-        else:  # fetch_mode == "none"
-            result = await connection_manager.execute_query(query, clean_parameters, "none")
-
-        execution_time = time.time() - start_time
-
-        # Format response based on fetch mode
-        if fetch_mode == "all":
-            # Convert asyncpg Records to dictionaries
-            rows = []
-            columns = []
-            if result and isinstance(result, list):
-                for row in result:
-                    # Handle both real asyncpg Records and mock objects
-                    if hasattr(row, "_asdict"):
-                        rows.append(row._asdict())
-                    elif hasattr(row, "items"):
-                        rows.append(dict(row))
-                    else:
-                        rows.append({"value": row})
-                columns = list(result[0].keys()) if result and hasattr(result[0], 'keys') else []
-
+    elif fetch_mode == "one":
+        if result is not None and hasattr(result, "keys"):
+            row_dict = dict(result)
+            columns = list(result.keys())
             formatted_result = format_query_result(
-                rows=rows, columns=columns, execution_time=execution_time
+                rows=[row_dict], columns=columns, execution_time=execution_time
             )
+            result_size = 1
+        else:
+            formatted_result = format_query_result(
+                rows=[], columns=[], execution_time=execution_time
+            )
+            result_size = 0
 
-        elif fetch_mode == "one":
-            if result is not None and hasattr(result, 'keys'):
-                row_dict = dict(result)
-                columns = list(result.keys())
-                formatted_result = format_query_result(
-                    rows=[row_dict], columns=columns, execution_time=execution_time
-                )
-            else:
-                formatted_result = format_query_result(
-                    rows=[], columns=[], execution_time=execution_time
-                )
+    elif fetch_mode == "val":
+        value = result[0] if isinstance(result, list) and len(result) > 0 else result
+        formatted_result = {
+            "value": serialize_value(value),
+            "execution_time_ms": round(execution_time * 1000, 2),
+            "metadata": {"fetch_mode": "val", "has_value": value is not None},
+        }
+        result_size = 1 if value is not None else 0
 
-        elif fetch_mode == "val":
-            value = result[0] if isinstance(result, list) and len(result) > 0 else result
-            formatted_result = {
-                "value": serialize_value(value),
-                "execution_time_ms": round(execution_time * 1000, 2),
-                "metadata": {"fetch_mode": "val", "has_value": value is not None},
-            }
+    else:  # fetch_mode == "none"
+        # For INSERT/UPDATE/DELETE, result is a status string like "INSERT 0 1"
+        formatted_result = {
+            "status": str(result),
+            "execution_time_ms": round(execution_time * 1000, 2),
+            "metadata": {"fetch_mode": "none", "operation_completed": True},
+        }
+        result_size = 0
 
-        else:  # fetch_mode == "none"
-            # For INSERT/UPDATE/DELETE, result is a status string like "INSERT 0 1"
-            formatted_result = {
-                "status": str(result),
-                "execution_time_ms": round(execution_time * 1000, 2),
-                "metadata": {"fetch_mode": "none", "operation_completed": True},
-            }
+    # Log performance metrics
+    metrics = PerformanceMetrics(
+        execution_time_ms=execution_time * 1000, query_count=1, result_size=result_size
+    )
+    logger.log_performance("query_execution", metrics, context)
 
-        logger.info(
-            f"Query executed successfully in {execution_time:.3f}s, fetch_mode: {fetch_mode}"
-        )
-
-        return format_success_response(
-            data=formatted_result, message="Query executed successfully"
-        )
-
-    except (ValidationError, SecurityError) as e:
-        logger.warning(f"Query validation/security error: {e}")
-        return format_error_response(e.error_code, str(e), e.details)
-
-    except Exception as e:
-        logger.error(f"Query execution error: {e}")
-        mcp_error = handle_postgres_error(e, query, parameters)
-        return format_error_response(
-            mcp_error.error_code, str(mcp_error), mcp_error.details
-        )
+    return format_success_response(
+        data=formatted_result, message="Query executed successfully"
+    )
 
 
-async def execute_raw_query(query: str, fetch_mode: Literal["all", "one", "none", "val"] = "all") -> dict[str, Any]:
+@handle_tool_errors(tool_name="execute_raw_query", operation="raw_query_execution")
+async def execute_raw_query(
+    query: str, fetch_mode: Literal["all", "one", "none", "val"] = "all"
+) -> dict[str, Any]:
     """Execute a raw SQL query without parameter binding.
 
     WARNING: This tool executes raw SQL without parameter binding and may be
@@ -170,116 +176,130 @@ async def execute_raw_query(query: str, fetch_mode: Literal["all", "one", "none"
         SecurityError: If query fails security validation
         QueryExecutionError: If query execution fails
     """
-    try:
-        # Validate inputs
-        if not query or not query.strip():
-            raise ValidationError("Query cannot be empty")
+    # Create log context
+    context = LogContext(tool_name="execute_raw_query", operation="raw_query_execution")
 
-        if fetch_mode not in {"all", "one", "none", "val"}:
-            raise ValidationError(
-                f"Invalid fetch_mode: {fetch_mode}. Must be one of: all, one, none, val"
-            )
+    # Validate inputs
+    if not query or not query.strip():
+        raise ValidationError("Query cannot be empty")
 
-        # Security validation (still applies to raw queries)
-        is_valid, error_msg = validate_query_permissions(query)
-        if not is_valid:
-            raise SecurityError(f"Query security validation failed: {error_msg}")
-
-        # Record start time for performance metrics
-        start_time = time.time()
-
-        # Execute raw query with warning
-        logger.warning(
-            f"Executing raw query (SQL injection risk): {query[:100]}{'...' if len(query) > 100 else ''}"
+    if fetch_mode not in {"all", "one", "none", "val"}:
+        raise ValidationError(
+            f"Invalid fetch_mode: {fetch_mode}. Must be one of: all, one, none, val"
         )
 
-        result = await connection_manager.execute_raw_query(
-            query=query, fetch_mode=fetch_mode
-        )
+    # Security validation (still applies to raw queries)
+    is_valid, error_msg = validate_query_permissions(query)
+    if not is_valid:
+        raise SecurityError(f"Query security validation failed: {error_msg}")
 
-        execution_time = time.time() - start_time
+    # Record start time for performance metrics
+    start_time = time.time()
 
-        # Format response based on fetch mode (same logic as execute_query)
-        if fetch_mode == "all":
-            rows = []
-            columns = []
-            if result and isinstance(result, list):
-                for row in result:
-                    # Handle both real asyncpg Records and mock objects
-                    if hasattr(row, "_asdict"):
-                        rows.append(row._asdict())
-                    elif hasattr(row, "items"):
-                        rows.append(dict(row))
-                    else:
-                        rows.append({"value": row})
-                columns = list(result[0].keys()) if result and hasattr(result[0], 'keys') else []
+    # Execute raw query with warning
+    logger.warning(
+        "Executing raw query (SQL injection risk)",
+        context,
+        {
+            "query_preview": query[:100] + ("..." if len(query) > 100 else ""),
+            "query_length": len(query),
+            "security_risk": "high",
+        },
+    )
 
-            formatted_result = format_query_result(
-                rows=rows, columns=columns, execution_time=execution_time
-            )
+    result = await connection_manager.execute_raw_query(
+        query=query, fetch_mode=fetch_mode
+    )
 
-        elif fetch_mode == "one":
-            if result is not None and hasattr(result, '__iter__') and not isinstance(result, str | bytes):
-                if hasattr(result, "_asdict"):
-                    row_dict = result._asdict()
-                elif hasattr(result, "items"):
-                    row_dict = dict(result)
+    execution_time = time.time() - start_time
+
+    # Format response based on fetch mode (same logic as execute_query)
+    if fetch_mode == "all":
+        rows = []
+        columns = []
+        if result and isinstance(result, list):
+            for row in result:
+                # Handle both real asyncpg Records and mock objects
+                if hasattr(row, "_asdict"):
+                    rows.append(row._asdict())
+                elif hasattr(row, "items"):
+                    rows.append(dict(row))
                 else:
-                    row_dict = {"value": result}
-                columns = list(row_dict.keys())
-                formatted_result = format_query_result(
-                    rows=[row_dict], columns=columns, execution_time=execution_time
-                )
+                    rows.append({"value": row})
+            columns = (
+                list(result[0].keys()) if result and hasattr(result[0], "keys") else []
+            )
+
+        formatted_result = format_query_result(
+            rows=rows, columns=columns, execution_time=execution_time
+        )
+
+    elif fetch_mode == "one":
+        if (
+            result is not None
+            and hasattr(result, "__iter__")
+            and not isinstance(result, str | bytes)
+        ):
+            if hasattr(result, "_asdict"):
+                row_dict = result._asdict()
+            elif hasattr(result, "items"):
+                row_dict = dict(result)
             else:
-                formatted_result = format_query_result(
-                    rows=[], columns=[], execution_time=execution_time
-                )
+                row_dict = {"value": result}
+            columns = list(row_dict.keys())
+            formatted_result = format_query_result(
+                rows=[row_dict], columns=columns, execution_time=execution_time
+            )
+        else:
+            formatted_result = format_query_result(
+                rows=[], columns=[], execution_time=execution_time
+            )
 
-        elif fetch_mode == "val":
-            value = result[0] if isinstance(result, list) and len(result) > 0 else result
-            formatted_result = {
-                "value": serialize_value(value),
-                "execution_time_ms": round(execution_time * 1000, 2),
-                "metadata": {"fetch_mode": "val", "has_value": value is not None},
-            }
+    elif fetch_mode == "val":
+        value = result[0] if isinstance(result, list) and len(result) > 0 else result
+        formatted_result = {
+            "value": serialize_value(value),
+            "execution_time_ms": round(execution_time * 1000, 2),
+            "metadata": {"fetch_mode": "val", "has_value": value is not None},
+        }
 
-        else:  # fetch_mode == "none"
-            formatted_result = {
-                "status": str(result),
-                "execution_time_ms": round(execution_time * 1000, 2),
-                "metadata": {"fetch_mode": "none", "operation_completed": True},
-            }
+    else:  # fetch_mode == "none"
+        formatted_result = {
+            "status": str(result),
+            "execution_time_ms": round(execution_time * 1000, 2),
+            "metadata": {"fetch_mode": "none", "operation_completed": True},
+        }
 
-        # Add security warning to response
-        formatted_result["security_warning"] = (
-            "This query was executed without parameter binding. "
-            "Ensure input is trusted to prevent SQL injection attacks."
-        )
+    # Determine result size for logging
+    if fetch_mode == "all":
+        result_size = len(rows) if "rows" in locals() else 0
+    elif fetch_mode == "one":
+        result_size = 1 if result is not None else 0
+    elif fetch_mode == "val":
+        result_size = 1 if value is not None else 0
+    else:
+        result_size = 0
 
-        logger.info(
-            f"Raw query executed successfully in {execution_time:.3f}s, fetch_mode: {fetch_mode}"
-        )
+    # Add security warning to response
+    formatted_result["security_warning"] = (
+        "This query was executed without parameter binding. "
+        "Ensure input is trusted to prevent SQL injection attacks."
+    )
 
-        return format_success_response(
-            data=formatted_result,
-            message="Raw query executed successfully (with security warning)",
-        )
+    # Log performance metrics
+    metrics = PerformanceMetrics(
+        execution_time_ms=execution_time * 1000, query_count=1, result_size=result_size
+    )
+    logger.log_performance("raw_query_execution", metrics, context)
 
-    except (ValidationError, SecurityError) as e:
-        logger.warning(f"Raw query validation/security error: {e}")
-        return format_error_response(e.error_code, str(e), e.details)
-
-    except Exception as e:
-        logger.error(f"Raw query execution error: {e}")
-        mcp_error = handle_postgres_error(e, query, None)
-        return format_error_response(
-            mcp_error.error_code, str(mcp_error), mcp_error.details
-        )
+    return format_success_response(
+        data=formatted_result,
+        message="Raw query executed successfully (with security warning)",
+    )
 
 
-async def execute_transaction(
-    queries: list[dict[str, Any]]
-) -> dict[str, Any]:
+@handle_tool_errors(tool_name="execute_transaction", operation="transaction_execution")
+async def execute_transaction(queries: list[dict[str, Any]]) -> dict[str, Any]:
     """Execute multiple queries in a single transaction with error handling.
 
     Args:
@@ -289,148 +309,159 @@ async def execute_transaction(
         Dict[str, Any]: Normalized transaction results
 
     Raises:
-        ValidationError, SecurityError
+        ValidationError: If queries are invalid
+        SecurityError: If any query fails security validation
+        QueryExecutionError: If transaction execution fails
     """
+    # Create log context
+    context = LogContext(
+        tool_name="execute_transaction", operation="transaction_execution"
+    )
 
-    try:
-        if not queries:
-            raise ValidationError("Queries list cannot be empty")
+    prepared_queries: list[dict[str, Any]] = []
 
-        prepared_queries: list[dict[str, Any]] = []
+    for i, q in enumerate(queries):
+        if not isinstance(q, dict):
+            raise ValidationError(f"Query {i} must be a dict")
+        query = q.get("query")
+        if not query or not query.strip():
+            raise ValidationError(f"Query {i} missing 'query'")
+        parameters = q.get("parameters", [])
+        fetch_mode = q.get("fetch_mode", "all")
+        if fetch_mode not in {"all", "one", "val", "none"}:
+            raise ValidationError(f"Query {i} has invalid fetch_mode: {fetch_mode}")
 
-        for i, q in enumerate(queries):
-            if not isinstance(q, dict):
-                raise ValidationError(f"Query {i} must be a dict")
-            query = q.get("query")
-            if not query or not query.strip():
-                raise ValidationError(f"Query {i} missing 'query'")
-            parameters = q.get("parameters", [])
-            fetch_mode = q.get("fetch_mode", "all")
-            if fetch_mode not in {"all", "one", "val", "none"}:
-                raise ValidationError(f"Query {i} has invalid fetch_mode: {fetch_mode}")
+        # Security validation & sanitize parameters
+        is_valid, error_msg = validate_query_permissions(query)
+        if not is_valid:
+            raise SecurityError(f"Query {i} failed security: {error_msg}")
+        clean_parameters = sanitize_parameters(parameters)
 
-            # Security validation & sanitize parameters
-            is_valid, error_msg = validate_query_permissions(query)
-            if not is_valid:
-                raise SecurityError(f"Query {i} failed security: {error_msg}")
-            clean_parameters = sanitize_parameters(parameters)
+        prepared_queries.append(
+            {"query": query, "parameters": clean_parameters, "fetch_mode": fetch_mode}
+        )
 
-            prepared_queries.append(
-                {"query": query, "parameters": clean_parameters, "fetch_mode": fetch_mode}
-            )
+    # Execute transaction
+    start_time = time.time()
+    logger.info(
+        f"Starting transaction with {len(prepared_queries)} queries",
+        context,
+        {"query_count": len(prepared_queries), "transaction_id": context.request_id},
+    )
 
-        # Execute transaction
-        start_time = time.time()
-        logger.info(f"Starting transaction with {len(prepared_queries)} queries")
+    results_raw = await connection_manager.execute_transaction(prepared_queries)
+    execution_time = time.time() - start_time
 
-        results_raw = await connection_manager.execute_transaction(prepared_queries)
-        execution_time = time.time() - start_time
+    # Normalize results
+    formatted_results: list[dict[str, Any]] = []
 
-        # Normalize results
-        formatted_results: list[dict[str, Any]] = []
+    for i, (query_info, result) in enumerate(
+        zip(prepared_queries, results_raw, strict=False)
+    ):
+        fetch_mode = query_info["fetch_mode"]
 
-        for i, (query_info, result) in enumerate(zip(prepared_queries, results_raw, strict=False)):
-            fetch_mode = query_info["fetch_mode"]
+        try:
+            if fetch_mode == "all":
+                rows: list[dict[str, Any]] = []
+                columns: list[str] = []
 
-            try:
-                if fetch_mode == "all":
-                    rows: list[dict[str, Any]] = []
-                    columns: list[str] = []
-
-                    if result:
-                        if isinstance(result, list):
-                            for row in result:
-                                if hasattr(row, "_asdict"):
-                                    rows.append(row._asdict())
-                                elif isinstance(row, dict):
-                                    rows.append(row)
-                                else:
-                                    rows.append({"value": row})
-                            columns = list(rows[0].keys()) if rows else []
-                        else:
-                            if hasattr(result, "_asdict"):
-                                row_dict = result._asdict()
-                            elif isinstance(result, dict):
-                                row_dict = result
+                if result:
+                    if isinstance(result, list):
+                        for row in result:
+                            if hasattr(row, "_asdict"):
+                                rows.append(row._asdict())
+                            elif isinstance(row, dict):
+                                rows.append(row)
                             else:
-                                row_dict = {"value": result}
-                            rows.append(row_dict)
-                            columns = list(row_dict.keys())
-
-                    query_result = {
-                        "query_index": i,
-                        "rows": rows,
-                        "columns": columns,
-                        "row_count": len(rows),
-                    }
-
-                elif fetch_mode == "one":
-                    if result:
+                                rows.append({"value": row})
+                        columns = list(rows[0].keys()) if rows else []
+                    else:
                         if hasattr(result, "_asdict"):
                             row_dict = result._asdict()
                         elif isinstance(result, dict):
                             row_dict = result
                         else:
                             row_dict = {"value": result}
+                        rows.append(row_dict)
                         columns = list(row_dict.keys())
-                        query_result = {
-                            "query_index": i,
-                            "rows": [row_dict],
-                            "columns": columns,
-                            "row_count": 1,
-                        }
+
+                query_result = {
+                    "query_index": i,
+                    "rows": rows,
+                    "columns": columns,
+                    "row_count": len(rows),
+                }
+
+            elif fetch_mode == "one":
+                if result:
+                    if hasattr(result, "_asdict"):
+                        row_dict = result._asdict()
+                    elif isinstance(result, dict):
+                        row_dict = result
                     else:
-                        query_result = {"query_index": i, "rows": [], "columns": [], "row_count": 0}
-
-                elif fetch_mode == "val":
+                        row_dict = {"value": result}
+                    columns = list(row_dict.keys())
                     query_result = {
                         "query_index": i,
-                        "value": serialize_value(result),
-                        "has_value": result is not None,
+                        "rows": [row_dict],
+                        "columns": columns,
+                        "row_count": 1,
                     }
-
-                else:  # fetch_mode == "none"
+                else:
                     query_result = {
                         "query_index": i,
-                        "status": str(result),
-                        "operation_completed": True,
+                        "rows": [],
+                        "columns": [],
+                        "row_count": 0,
                     }
 
-                formatted_results.append(query_result)
+            elif fetch_mode == "val":
+                query_result = {
+                    "query_index": i,
+                    "value": serialize_value(result),
+                    "has_value": result is not None,
+                }
 
-            except Exception as e:
-                logger.error(f"Error formatting result for query {i}: {e}")
-                raise Exception(f"Failed to format result for query {i}: {e}") from e
+            else:  # fetch_mode == "none"
+                query_result = {
+                    "query_index": i,
+                    "status": str(result),
+                    "operation_completed": True,
+                }
 
-        transaction_result = {
-            "transaction_results": formatted_results,
-            "query_count": len(prepared_queries),
-            "execution_time_ms": round(execution_time * 1000, 2),
-            "metadata": {
-                "transaction_completed": True,
-                "all_queries_successful": True,
-                "rollback_occurred": False,
-            },
-        }
+            formatted_results.append(query_result)
 
-        logger.info(f"Transaction completed successfully in {execution_time:.3f}s with {len(prepared_queries)} queries")
-        return format_success_response(
-            data=transaction_result, message="Transaction executed successfully"
-        )
+        except Exception as e:
+            logger.error(f"Error formatting result for query {i}: {e}")
+            raise Exception(f"Failed to format result for query {i}: {e}") from e
 
-    except (ValidationError, SecurityError) as e:
-        logger.warning(f"Transaction error: {e}")
-        return format_error_response(e.error_code, str(e), getattr(e, "details", {}))
+    transaction_result = {
+        "transaction_results": formatted_results,
+        "query_count": len(prepared_queries),
+        "execution_time_ms": round(execution_time * 1000, 2),
+        "metadata": {
+            "transaction_completed": True,
+            "all_queries_successful": True,
+            "rollback_occurred": False,
+        },
+    }
 
-    except Exception as e:
-        logger.error(f"Unexpected transaction error: {e}")
-        mcp_error = handle_postgres_error(e)
-        if hasattr(mcp_error, "details"):
-            mcp_error.details["transaction_failed"] = True
-            mcp_error.details["rollback_occurred"] = True
-        return format_error_response(
-            mcp_error.error_code, str(mcp_error), mcp_error.details
-        )
+    # Log performance metrics
+    total_rows = sum(
+        result.get("row_count", 0) if isinstance(result, dict) else 0
+        for result in formatted_results
+    )
+
+    metrics = PerformanceMetrics(
+        execution_time_ms=execution_time * 1000,
+        query_count=len(prepared_queries),
+        result_size=total_rows,
+    )
+    logger.log_performance("transaction_execution", metrics, context)
+
+    return format_success_response(
+        data=transaction_result, message="Transaction executed successfully"
+    )
 
 
 # Tool schema definitions for MCP registration
