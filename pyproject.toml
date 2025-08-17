@@ -23,10 +23,10 @@ dependencies = [
 ]
 
 [project.scripts]
-mcp-postgres = "mcp_postgres.main:main"
+mcp-postgres = "mcp_postgres.__main__:main"
 
 [project.entry-points."mcp.servers"]
-postgres = "mcp_postgres.main:main"
+postgres = "mcp_postgres.__main__:main"
 
 [dependency-groups]
 dev = [
