@@ -1,6 +1,17 @@
-# MCP Postgres
+<div align="center">
+  <h1>MCP Postgres</h1>
 
-A comprehensive Model Context Protocol (MCP) server for PostgreSQL database interactions. This server provides 50+ specialized tools organized into 10 functional modules, enabling AI assistants to perform database operations safely and efficiently.
+  <p>
+    <em>A comprehensive Model Context Protocol (MCP) server for PostgreSQL database interactions.</em>
+  </p>
+
+[![Python Version](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-brightgreen)](https://modelcontextprotocol.io)
+
+
+</div>
 
 ## Features
 
@@ -230,6 +241,8 @@ The server provides 50+ tools organized into 10 modules:
 - `generate_insert_template`: Create INSERT templates
 - `generate_orm_model`: Generate ORM model classes
 
+For detailed documentation of all MCP tools, please refer to the official documentation [TOOLS.md](TOOLS.md).
+
 ## Example Usage
 
 ### Basic Query Execution
@@ -408,7 +421,7 @@ LOG_LEVEL=DEBUG uv run python -m mcp_postgres
 
 ## License
 
-MIT License - see LICENSE file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
 
 ## Support
 

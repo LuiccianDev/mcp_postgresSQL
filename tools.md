@@ -1,199 +1,235 @@
-# TOOLS
+# MCP PostgreSQL Tools Documentation
 
-## Tools Básicos de Consulta
+## Table of Contents
+- [Analysis Tools](#analysis-tools)
+- [Backup Tools](#backup-tools)
+- [Data Tools](#data-tools)
+- [Generation Tools](#generation-tools)
+- [Performance Tools](#performance-tools)
+- [Query Tools](#query-tools)
+- [Relation Tools](#relation-tools)
+- [Schema Tools](#schema-tools)
+- [Validation Tools](#validation-tools)
 
-```python
-@mcp.tool()
-async def execute_query(query: str, params: list = None, ctx: Context) -> dict:
-    """Ejecutar query SQL con parámetros opcionales"""
+## Analysis Tools
 
-@mcp.tool()
-async def execute_raw_query(query: str, ctx: Context) -> dict:
-    """Ejecutar query SQL sin validación (solo lectura)"""
+Tools for data analysis and profiling.
 
-@mcp.tool()
-async def count_rows(table_name: str, where_clause: str = None, ctx: Context) -> dict:
-    """Contar filas en una tabla con condición opcional"""
+### `analyze_column`
+Perform statistical analysis on a specific column.
 
-```
+**Parameters:**
+- `table_name` (str): Name of the table containing the column
+- `column_name` (str): Name of the column to analyze
 
-## Tools de Metadata y Esquema
+**Returns:**
+Dictionary containing statistical analysis results including count, nulls, distinct values, min/max values, and data distribution.
 
-```python
-@mcp.tool()
-async def list_databases(ctx: Context) -> dict:
-    """Listar todas las bases de datos disponibles"""
+### `analyze_correlations`
+Analyze correlations between numeric columns in a table.
 
-@mcp.tool()
-async def list_tables(schema: str = "public", ctx: Context) -> dict:
-    """Listar tablas de un esquema específico"""
+**Parameters:**
+- `table_name` (str): Name of the table to analyze
+- `columns` (list[str], optional): List of numeric column names to analyze
+- `method` (str): Correlation method ('pearson' only supported currently)
 
-@mcp.tool()
-async def list_views(schema: str = "public", ctx: Context) -> dict:
-    """Listar vistas de un esquema"""
+**Returns:**
+Dictionary containing correlation analysis results.
 
-@mcp.tool()
-async def describe_table(table_name: str, schema: str = "public", ctx: Context) -> dict:
-    """Obtener estructura completa de tabla (columnas, tipos, constraints)"""
+### `find_duplicates`
+Find duplicate records in a table based on specified columns.
 
-@mcp.tool()
-async def get_table_indexes(table_name: str, schema: str = "public", ctx: Context) -> dict:
-    """Obtener índices de una tabla"""
+**Parameters:**
+- `table_name` (str): Name of the table to analyze
+- `columns` (list[str]): List of column names to check for duplicates
 
-@mcp.tool()
-async def get_table_constraints(table_name: str, schema: str = "public", ctx: Context) -> dict:
-    """Obtener constraints (PK, FK, CHECK, etc.)"""
+**Returns:**
+Dictionary containing information about duplicate records.
 
-@mcp.tool()
-async def list_functions(schema: str = "public", ctx: Context) -> dict:
-    """Listar funciones almacenadas"""
+## Backup Tools
 
-@mcp.tool()
-async def list_procedures(schema: str = "public", ctx: Context) -> dict:
-    """Listar procedimientos almacenados"""
+Tools for database backup and restore operations.
 
-```
+### `backup_table`
+Create a backup of a table.
 
-## Tools de Análisis de Datos
+**Parameters:**
+- `table_name` (str): Name of the table to back up
+- `backup_name` (str): Name for the backup
 
-```python
-@mcp.tool()
-async def analyze_table(table_name: str, ctx: Context) -> dict:
-    """Análisis estadístico básico de una tabla"""
+**Returns:**
+Dictionary with backup status and details.
 
-@mcp.tool()
-async def get_table_size(table_name: str, ctx: Context) -> dict:
-    """Obtener tamaño de tabla en disco"""
+### `export_table_csv`
+Export table data to a CSV file.
 
-@mcp.tool()
-async def find_duplicates(table_name: str, columns: list, ctx: Context) -> dict:
-    """Encontrar registros duplicados"""
+**Parameters:**
+- `table_name` (str): Name of the table to export
+- `file_path` (str): Path to save the CSV file
+- `query` (str, optional): Optional query to filter exported data
+- `delimiter` (str): CSV delimiter character
 
-@mcp.tool()
-async def get_column_stats(table_name: str, column_name: str, ctx: Context) -> dict:
-    """Estadísticas de una columna específica"""
+**Returns:**
+Dictionary with export status and details.
 
-```
+### `import_csv_data`
+Import data from a CSV file into a table.
 
-## Tools de Gestión de Datos
+**Parameters:**
+- `table_name` (str): Target table name
+- `file_path` (str): Path to the CSV file
+- `delimiter` (str): CSV delimiter character
+- `header` (bool): Whether the CSV has a header row
 
-```python
-@mcp.tool()
-async def insert_data(table_name: str, data: dict, ctx: Context) -> dict:
-    """Insertar un registro en tabla"""
+**Returns:**
+Dictionary with import status and details.
 
-@mcp.tool()
-async def update_data(table_name: str, data: dict, where: dict, ctx: Context) -> dict:
-    """Actualizar registros usando un diccionario de condiciones para el WHERE (ej: {'id': 5, 'status': 'active'})."""
+## Data Tools
 
-@mcp.tool()
-async def delete_data(table_name: str, where: dict, ctx: Context) -> dict:
-    """Eliminar registros usando un diccionario de condiciones para el WHERE."""
+Tools for data manipulation and management.
 
-@mcp.tool()
-async def bulk_insert(table_name: str, data_list: list, ctx: Context) -> dict:
-    """Inserción masiva de datos"""
+### `insert_data`
+Insert data into a table.
 
-```
+**Parameters:**
+- `table_name` (str): Target table name
+- `data` (dict): Dictionary of column-value pairs to insert
 
-## Tools de Relaciones
+**Returns:**
+Dictionary with insert status and details.
 
-```python
-@mcp.tool()
-async def get_foreign_keys(table_name: str, ctx: Context) -> dict:
-    """Obtener claves foráneas de una tabla"""
+### `update_data`
+Update records in a table.
 
-@mcp.tool()
-async def get_referenced_tables(table_name: str, ctx: Context) -> dict:
-    """Obtener tablas que referencian a esta tabla"""
+**Parameters:**
+- `table_name` (str): Target table name
+- `data` (dict): Dictionary of column-value pairs to update
+- `where_conditions` (dict): Conditions to identify records to update
+- `return_columns` (list[str], optional): Columns to return after update
+- `limit` (int, optional): Maximum number of records to update
 
-@mcp.tool()
-async def generate_join_query(tables: list, join_type: str = "INNER", ctx: Context) -> dict:
-    """Generar query con JOINs, infiriendo las condiciones desde las Foreign Keys del esquema."""
+**Returns:**
+Dictionary with update status and details.
 
-```
+### `delete_data`
+Delete records from a table.
 
-## Tools de Performance
+**Parameters:**
+- `table_name` (str): Target table name
+- `where_conditions` (dict): Conditions to identify records to delete
 
-```python
-@mcp.tool()
-async def explain_query(query: str, analyze: bool = False, ctx: Context) -> dict:
-    """EXPLAIN (ANALYZE) de un query"""
+**Returns:**
+Dictionary with delete status and details.
 
-@mcp.tool()
-async def get_slow_queries(limit: int = 10, ctx: Context) -> dict:
-    """Obtener queries más lentos"""
+## Generation Tools
 
-@mcp.tool()
-async def get_table_statistics(table_name: str, ctx: Context) -> dict:
-    """Estadísticas de uso de tabla"""
+Tools for code and SQL generation.
 
-```
+### `generate_orm_model`
+Generate ORM model class definition for a table.
 
-## Tools de Backup y Restore
+**Parameters:**
+- `table_name` (str): Name of the table
+- `schema_name` (str, optional): Schema name (defaults to 'public')
+- `model_type` (str): Type of ORM model ('sqlalchemy', 'django', 'pydantic')
+- `class_name` (str, optional): Custom class name for the model
 
-```python
-@mcp.tool()
-async def export_table_csv(table_name: str, file_path: str, query: str = None, delimiter: str = ",", ctx: Context) -> dict:
-    """Exportar tabla o resultado de un query a CSV. Permite especificar un query para exportaciones parciales."""
+**Returns:**
+Dictionary containing the generated model code.
 
-@mcp.tool()
-async def import_csv_to_table(table_name: str, file_path: str, delimiter: str = ",", header: bool = True, ctx: Context) -> dict:
-    """Importar CSV a tabla, especificando si tiene cabecera y cuál es el delimitador."""
+### `generate_insert_template`
+Generate INSERT statement template for a table.
 
-@mcp.tool()
-async def create_table_backup(table_name: str, backup_name: str, ctx: Context) -> dict:
-    """Crear respaldo de tabla"""
-```
+**Parameters:**
+- `table_name` (str): Name of the table
+- `schema_name` (str, optional): Schema name (defaults to 'public')
+- `include_optional` (bool): Whether to include nullable columns
 
-## Tools de Administración
+**Returns:**
+Dictionary containing the generated INSERT template.
 
-```python
-@mcp.tool()
-async def get_database_info(ctx: Context) -> dict:
-    """Información general de la base de datos"""
+## Performance Tools
 
-@mcp.tool()
-async def get_connection_info(ctx: Context) -> dict:
-    """Información de conexiones activas"""
+Tools for database performance monitoring and optimization.
 
-@mcp.tool()
-async def vacuum_table(table_name: str, analyze: bool = True, ctx: Context) -> dict:
-    """VACUUM (ANALYZE) de una tabla"""
+### `monitor_connections`
+Monitor active database connections.
 
-@mcp.tool()
-async def reindex_table(table_name: str, ctx: Context) -> dict:
-    """Reindexar una tabla"""
-```
+**Returns:**
+Dictionary with connection information.
 
-## Tools de Validación
+### `get_database_info`
+Get general database information.
 
-```python
-@mcp.tool()
-async def validate_query(query: str, ctx: Context) -> dict:
-    """Validar sintaxis de query sin ejecutar"""
+**Returns:**
+Dictionary with database statistics and configuration.
 
-@mcp.tool()
-async def check_table_integrity(table_name: str, ctx: Context) -> dict:
-    """Verificar integridad de datos"""
+## Query Tools
 
-@mcp.tool()
-async def find_orphaned_records(parent_table: str, child_table: str, fk_column: str, ctx: Context) -> dict:
-    """Encontrar registros huérfanos"""
-```
+Tools for executing and analyzing SQL queries.
 
-## Tools de Generacion
+### `execute_query`
+Execute a SQL query with parameters.
 
-```python
-@mcp.tool()
-async def generate_create_table_sql(table_name: str, ctx: Context) -> dict:
-    """Generar SQL CREATE TABLE de tabla existente"""
+**Parameters:**
+- `query` (str): SQL query to execute
+- `params` (list, optional): Query parameters
 
-@mcp.tool()
-async def generate_insert_template(table_name: str, ctx: Context) -> dict:
-    """Generar template de INSERT para tabla"""
+**Returns:**
+Query results.
 
-@mcp.tool()
-async def generate_model_class(table_name: str, language: str = "python", ctx: Context) -> dict:
-    """Generar clase modelo para ORM"""
-```
+## Schema Tools
+
+Tools for database schema inspection and manipulation.
+
+### `list_tables`
+List all tables in a schema.
+
+**Parameters:**
+- `schema_name` (str, optional): Schema name (defaults to 'public')
+
+**Returns:**
+List of tables in the schema.
+
+### `describe_table`
+Get detailed information about a table.
+
+**Parameters:**
+- `table_name` (str): Name of the table
+- `schema_name` (str, optional): Schema name (defaults to 'public')
+
+**Returns:**
+Detailed table information including columns, constraints, and indexes.
+
+## Validation Tools
+
+Tools for data validation and integrity checking.
+
+### `validate_constraints`
+Validate table constraints.
+
+**Parameters:**
+- `table_name` (str): Name of the table to validate
+- `constraint_name` (str, optional): Specific constraint to validate
+
+**Returns:**
+Validation results.
+
+### `validate_data_types`
+Validate column data types.
+
+**Parameters:**
+- `table_name` (str): Name of the table
+- `column_name` (str, optional): Specific column to validate
+
+**Returns:**
+Data type validation results.
+
+### `check_data_integrity`
+Check data integrity for a table.
+
+**Parameters:**
+- `table_name` (str): Name of the table to check
+
+**Returns:**
+Data integrity check results.
