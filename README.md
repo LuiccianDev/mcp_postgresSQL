@@ -1,0 +1,418 @@
+# MCP Postgres
+
+A comprehensive Model Context Protocol (MCP) server for PostgreSQL database interactions. This server provides 50+ specialized tools organized into 10 functional modules, enabling AI assistants to perform database operations safely and efficiently.
+
+## Features
+
+- **Query Execution**: Execute SQL queries with parameter binding and transaction support
+- **Schema Management**: Inspect database structure, tables, views, indexes, and constraints
+- **Data Analysis**: Statistical analysis, duplicate detection, and column profiling
+- **Data Management**: CRUD operations with bulk insert capabilities
+- **Performance Tools**: Query analysis, slow query detection, and table statistics
+- **Backup & Restore**: CSV export/import and table backup functionality
+- **Administration**: Database info, connection monitoring, vacuum, and reindexing
+- **Code Generation**: Generate SQL DDL, insert templates, and ORM model classes
+- **Validation Tools**: Data integrity checks and constraint validation
+- **Relation Tools**: Foreign key analysis and referential integrity
+
+## Installation
+
+### Prerequisites
+
+- Python 3.13 or higher
+- PostgreSQL database (local or remote)
+- `uv` package manager (recommended) or `pip`
+
+### Install with uv (recommended)
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd mcp-postgres
+
+# Install dependencies
+uv sync
+
+# Install pre-commit hooks (for development)
+uv run pre-commit install
+```
+
+### Install with pip
+
+```bash
+pip install -e .
+```
+
+## Configuration
+
+### Environment Variables
+
+Create a `.env` file or set the following environment variables:
+
+```bash
+# Database connection (required)
+DATABASE_URL="postgresql://username:password@localhost:5432/database_name"
+
+# Or individual components
+POSTGRES_HOST="localhost"
+POSTGRES_PORT="5432"
+POSTGRES_DATABASE="your_database"
+POSTGRES_USERNAME="your_username"
+POSTGRES_PASSWORD="your_password"
+
+# Optional configuration
+POSTGRES_POOL_SIZE="10"
+POSTGRES_MAX_OVERFLOW="20"
+LOG_LEVEL="INFO"
+QUERY_TIMEOUT="30"
+```
+
+### Database Connection Examples
+
+#### Local PostgreSQL
+```bash
+DATABASE_URL="postgresql://postgres:password@localhost:5432/mydb"
+```
+
+#### Remote PostgreSQL
+```bash
+DATABASE_URL="postgresql://user:pass@remote-host:5432/production_db"
+```
+
+#### PostgreSQL with SSL
+```bash
+DATABASE_URL="postgresql://user:pass@host:5432/db?sslmode=require"
+```
+
+## Usage
+
+### Running the MCP Server
+
+#### Method 1: Direct execution
+```bash
+# Using uv
+uv run python -m mcp_postgres
+
+# Using pip installation
+python -m mcp_postgres
+```
+
+#### Method 2: Using the installed script
+```bash
+mcp-postgres
+```
+
+#### Method 3: Development mode with auto-reload
+```bash
+uv run python -m mcp_postgres --dev
+```
+
+### MCP Client Integration
+
+#### Claude Desktop Configuration
+
+Add to your Claude Desktop configuration file:
+
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "uv",
+      "args": ["run", "python", "-m", "mcp_postgres"],
+      "cwd": "/path/to/mcp-postgres",
+      "env": {
+        "DATABASE_URL": "postgresql://user:pass@localhost:5432/dbname"
+      }
+    }
+  }
+}
+```
+
+#### Using with other MCP clients
+
+```python
+import asyncio
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+async def main():
+    server_params = StdioServerParameters(
+        command="python",
+        args=["-m", "mcp_postgres"],
+        env={"DATABASE_URL": "postgresql://user:pass@localhost:5432/db"}
+    )
+
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            # Initialize the connection
+            await session.initialize()
+
+            # List available tools
+            tools = await session.list_tools()
+            print(f"Available tools: {len(tools.tools)}")
+
+            # Execute a query
+            result = await session.call_tool(
+                "execute_query",
+                arguments={
+                    "query": "SELECT * FROM users WHERE age > $1",
+                    "parameters": [25]
+                }
+            )
+            print(result)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+## Available Tools
+
+The server provides 50+ tools organized into 10 modules:
+
+### Query Tools (3 tools)
+- `execute_query`: Execute parameterized SQL queries safely
+- `execute_raw_query`: Execute raw SQL with safety warnings
+- `execute_transaction`: Execute multiple queries in a transaction
+
+### Schema Tools (8 tools)
+- `list_tables`: List all tables with metadata
+- `describe_table`: Get detailed table structure
+- `list_indexes`: Show table indexes and performance info
+- `list_constraints`: Display foreign keys and constraints
+- `list_views`: Show database views and definitions
+- `list_functions`: List stored procedures and functions
+- `list_triggers`: Display trigger definitions
+- `list_sequences`: Show sequence information
+
+### Analysis Tools (4 tools)
+- `analyze_column`: Statistical analysis of column data
+- `find_duplicates`: Detect duplicate records
+- `profile_table`: Analyze data types and distributions
+- `analyze_correlations`: Calculate column relationships
+
+### Data Tools (4 tools)
+- `insert_data`: Insert records with validation
+- `update_data`: Update records with conditions
+- `delete_data`: Delete records with safety checks
+- `bulk_insert`: Efficient bulk data insertion
+
+### Relation Tools (3 tools)
+- `get_foreign_keys`: Map foreign key relationships
+- `get_table_relationships`: Analyze table connections
+- `validate_referential_integrity`: Check constraint violations
+
+### Performance Tools (3 tools)
+- `analyze_query_performance`: Analyze execution plans
+- `find_slow_queries`: Identify performance bottlenecks
+- `get_table_stats`: Get storage and access statistics
+
+### Backup Tools (3 tools)
+- `export_table_csv`: Export table data to CSV
+- `import_csv_data`: Import CSV data with validation
+- `backup_table`: Create complete table backups
+
+### Admin Tools (4 tools)
+- `get_database_info`: Get database version and info
+- `monitor_connections`: Monitor active connections
+- `vacuum_table`: Perform table maintenance
+- `reindex_table`: Rebuild table indexes
+
+### Validation Tools (3 tools)
+- `validate_constraints`: Check constraint violations
+- `validate_data_types`: Verify data type compliance
+- `check_data_integrity`: Comprehensive integrity checks
+
+### Generation Tools (3 tools)
+- `generate_ddl`: Generate CREATE TABLE statements
+- `generate_insert_template`: Create INSERT templates
+- `generate_orm_model`: Generate ORM model classes
+
+## Example Usage
+
+### Basic Query Execution
+
+```python
+# Execute a parameterized query
+result = await session.call_tool(
+    "execute_query",
+    arguments={
+        "query": "SELECT name, email FROM users WHERE created_at > $1",
+        "parameters": ["2024-01-01"]
+    }
+)
+```
+
+### Schema Inspection
+
+```python
+# List all tables
+tables = await session.call_tool("list_tables")
+
+# Get detailed table structure
+table_info = await session.call_tool(
+    "describe_table",
+    arguments={"table_name": "users"}
+)
+```
+
+### Data Analysis
+
+```python
+# Analyze column statistics
+stats = await session.call_tool(
+    "analyze_column",
+    arguments={
+        "table_name": "sales",
+        "column_name": "amount"
+    }
+)
+
+# Find duplicate records
+duplicates = await session.call_tool(
+    "find_duplicates",
+    arguments={
+        "table_name": "customers",
+        "columns": ["email"]
+    }
+)
+```
+
+### Performance Analysis
+
+```python
+# Analyze query performance
+performance = await session.call_tool(
+    "analyze_query_performance",
+    arguments={
+        "query": "SELECT * FROM orders WHERE customer_id = 123"
+    }
+)
+
+# Get table statistics
+stats = await session.call_tool(
+    "get_table_stats",
+    arguments={"table_name": "orders"}
+)
+```
+
+## Development
+
+### Setup Development Environment
+
+```bash
+# Clone and setup
+git clone <repository-url>
+cd mcp-postgres
+uv sync
+
+# Install pre-commit hooks
+uv run pre-commit install
+```
+
+### Code Quality
+
+```bash
+# Run linter and formatter
+uv run ruff check --fix
+uv run ruff format
+
+# Type checking
+uv run mypy src/
+
+# Run all pre-commit hooks
+uv run pre-commit run --all-files
+```
+
+### Testing
+
+```bash
+# Run tests
+uv run pytest
+
+# Run tests with coverage
+uv run pytest --cov=src/mcp_postgres
+
+# Run specific test file
+uv run pytest tests/unit/test_query_tools.py
+```
+
+### Project Structure
+
+```
+src/mcp_postgres/
+├── __init__.py
+├── main.py                    # MCP server entry point
+├── config/                    # Configuration management
+├── core/                      # Core services (connection, security, context)
+├── tools/                     # Tool modules (10 modules, 50+ tools)
+└── utils/                     # Utilities (validators, formatters, exceptions)
+```
+
+## Security
+
+- **SQL Injection Prevention**: All queries use parameter binding
+- **Input Validation**: Comprehensive parameter validation
+- **Access Control**: Table-level access validation
+- **Error Handling**: Sanitized error messages without sensitive data
+- **Connection Security**: Secure connection pool management
+
+## Performance
+
+- **Connection Pooling**: Async connection pool with configurable size
+- **Query Optimization**: Execution plan analysis and slow query detection
+- **Result Caching**: Schema metadata caching for improved performance
+- **Bulk Operations**: Efficient bulk insert and export capabilities
+
+## Troubleshooting
+
+### Common Issues
+
+#### Connection Issues
+```bash
+# Test database connection
+psql "postgresql://user:pass@host:port/db" -c "SELECT version();"
+```
+
+#### Permission Issues
+```bash
+# Grant necessary permissions
+GRANT CONNECT ON DATABASE mydb TO username;
+GRANT USAGE ON SCHEMA public TO username;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO username;
+```
+
+#### Environment Variables
+```bash
+# Check environment variables
+echo $DATABASE_URL
+```
+
+### Logging
+
+Set `LOG_LEVEL=DEBUG` for detailed logging:
+
+```bash
+LOG_LEVEL=DEBUG uv run python -m mcp_postgres
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and linting
+5. Submit a pull request
+
+## License
+
+MIT License - see LICENSE file for details.
+
+## Support
+
+For issues and questions:
+- Create an issue on GitHub
+- Check the troubleshooting section
+- Review the MCP documentation

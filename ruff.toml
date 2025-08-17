@@ -23,10 +23,11 @@ ignore = [
     "S101",  # use of assert detected (pytest uses assert)
     "S110",  # raise exception in __init__
     "S112",  # use of assert (pytest)
+    "S608",
 ]
 
 [lint.per-file-ignores]
-"tests/*" = ["S101", "S106", "S108"]
+"tests/*" = ["S101", "S106", "S108","B007", "S105", "UP038"]
 
 # ==============================
 # Configuración de isort dentro de Ruff

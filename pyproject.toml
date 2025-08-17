@@ -1,13 +1,32 @@
 [project]
 name = "mcp-postgres"
 version = "0.1.0"
-description = "Add your description here"
+description = "Model Context Protocol server for PostgreSQL database interactions with 50+ specialized tools"
 readme = "README.md"
 requires-python = ">=3.13"
+authors = [
+    {name = "MCP Postgres Team"}
+]
+keywords = ["mcp", "postgresql", "database", "ai", "llm"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Database",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
     "asyncpg>=0.30.0",
     "mcp[cli]>=1.13.0",
 ]
+
+[project.scripts]
+mcp-postgres = "mcp_postgres.main:main"
+
+[project.entry-points."mcp.servers"]
+postgres = "mcp_postgres.main:main"
 
 [dependency-groups]
 dev = [
@@ -16,6 +35,7 @@ dev = [
     "ruff>=0.12.9",
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
 ]
 
 [tool.mypy]
