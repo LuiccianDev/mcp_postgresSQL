@@ -20,6 +20,9 @@ cd mcp-postgres
 # Install dependencies
 uv sync
 
+# Install the package in development mode
+uv pip install -e .
+
 # Install pre-commit hooks
 uv run pre-commit install
 ```
@@ -68,6 +71,8 @@ uv run pytest tests/unit/test_query_tools.py
 
 ### Running the Server
 
+#### From Cloned Project
+
 ```bash
 # Development mode with debug logging
 uv run python -m mcp_postgres --dev
@@ -77,6 +82,26 @@ uv run python -m mcp_postgres
 
 # With custom log level
 uv run python -m mcp_postgres --log-level DEBUG
+
+# Using the virtual environment Python directly
+.venv/Scripts/python.exe -m mcp_postgres --dev  # Windows
+.venv/bin/python -m mcp_postgres --dev          # macOS/Linux
+```
+
+#### From Installed Package
+
+```bash
+# Development mode
+mcp-postgres --dev
+
+# Standard mode
+mcp-postgres
+
+# With custom log level
+mcp-postgres --log-level DEBUG
+
+# Using Python module
+python -m mcp_postgres --dev
 ```
 
 ## Project Structure

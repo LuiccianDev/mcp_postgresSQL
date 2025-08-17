@@ -5,8 +5,8 @@
     <em>A comprehensive Model Context Protocol (MCP) server for PostgreSQL database interactions.</em>
   </p>
 
-[![Python Version](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Python Version](https://img.shields.io/badge/python-3.13%2B-blue.svg)](https://www.python.org/downloads/)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-brightgreen)](https://modelcontextprotocol.io)
 
@@ -34,7 +34,12 @@
 - PostgreSQL database (local or remote)
 - `uv` package manager (recommended) or `pip`
 
-### Install with uv (recommended)
+### Option 1: Development Setup (Cloned Project)
+
+**Use this approach if you want to:**
+- Modify or contribute to the code
+- Use the latest development features
+- Debug or customize the server behavior
 
 ```bash
 # Clone the repository
@@ -44,15 +49,38 @@ cd mcp-postgres
 # Install dependencies
 uv sync
 
+# Install the package in development mode
+uv pip install -e .
+
 # Install pre-commit hooks (for development)
 uv run pre-commit install
 ```
 
-### Install with pip
+### Option 2: Package Installation
+
+**Use this approach if you want to:**
+- Simply use the server without modifications
+- Have a cleaner installation
+- Use a stable released version
 
 ```bash
-pip install -e .
+# Install from PyPI (when available)
+pip install mcp-postgres
+
+# Or install with uv
+uv add mcp-postgres
 ```
+
+### Which Option Should I Choose?
+
+| Feature | Cloned Project | Installed Package |
+|---------|----------------|-------------------|
+| **Ease of setup** | Moderate | Easy |
+| **Customization** | Full access | Limited |
+| **Updates** | Manual git pull | Package manager |
+| **Development** | Full development environment | Not suitable |
+| **Stability** | Latest code (may be unstable) | Released versions |
+| **Disk space** | More (includes dev dependencies) | Less |
 
 ## Configuration
 
@@ -99,23 +127,30 @@ DATABASE_URL="postgresql://user:pass@host:5432/db?sslmode=require"
 
 ### Running the MCP Server
 
-#### Method 1: Direct execution
+#### From Cloned Project (Development)
+
 ```bash
-# Using uv
+# Using uv (recommended for development)
 uv run python -m mcp_postgres
 
-# Using pip installation
-python -m mcp_postgres
-```
-
-#### Method 2: Using the installed script
-```bash
-mcp-postgres
-```
-
-#### Method 3: Development mode with auto-reload
-```bash
+# Development mode with debug logging
 uv run python -m mcp_postgres --dev
+
+# With custom log level
+uv run python -m mcp_postgres --log-level DEBUG
+```
+
+#### From Installed Package
+
+```bash
+# Using the installed script
+mcp-postgres
+
+# Or using Python module
+python -m mcp_postgres
+
+# Development mode
+mcp-postgres --dev
 ```
 
 ### MCP Client Integration
@@ -127,6 +162,23 @@ Add to your Claude Desktop configuration file:
 **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 **Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
 
+##### For Cloned Project (Development)
+
+```json
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "C:/path/to/mcp-postgres/.venv/Scripts/python.exe",
+      "args": ["-m", "mcp_postgres"],
+      "env": {
+        "DATABASE_URL": "postgresql://user:pass@localhost:5432/dbname"
+      }
+    }
+  }
+}
+```
+
+**Alternative using uv (if uv is in PATH):**
 ```json
 {
   "mcpServers": {
@@ -134,6 +186,36 @@ Add to your Claude Desktop configuration file:
       "command": "uv",
       "args": ["run", "python", "-m", "mcp_postgres"],
       "cwd": "/path/to/mcp-postgres",
+      "env": {
+        "DATABASE_URL": "postgresql://user:pass@localhost:5432/dbname"
+      }
+    }
+  }
+}
+```
+
+##### For Installed Package
+
+```json
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "mcp-postgres",
+      "env": {
+        "DATABASE_URL": "postgresql://user:pass@localhost:5432/dbname"
+      }
+    }
+  }
+}
+```
+
+**Or using Python module:**
+```json
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "python",
+      "args": ["-m", "mcp_postgres"],
       "env": {
         "DATABASE_URL": "postgresql://user:pass@localhost:5432/dbname"
       }
@@ -409,6 +491,121 @@ Set `LOG_LEVEL=DEBUG` for detailed logging:
 
 ```bash
 LOG_LEVEL=DEBUG uv run python -m mcp_postgres
+```
+
+## Verification
+
+After installation, verify that everything is working correctly:
+
+### Test Installation
+```bash
+# Test module import
+uv run python -c "import mcp_postgres; print('✓ Package installed correctly')"
+
+# Test entry points
+uv run python -m mcp_postgres --version
+uv run mcp-postgres --version
+```
+
+### Test Development Tools
+```bash
+# Test linting and formatting
+uv run ruff check src/
+uv run ruff format src/
+
+# Test type checking
+uv run mypy src/
+
+# Run pre-commit hooks
+uv run pre-commit run --all-files
+```
+
+### Test MCP Server (requires database)
+
+#### For Cloned Project
+```bash
+# Set up test database connection
+export DATABASE_URL="postgresql://user:pass@localhost:5432/testdb"
+
+# Test server startup (will exit after showing help)
+uv run python -m mcp_postgres --help
+
+# Test with actual database connection
+uv run python -m mcp_postgres --dev
+
+# Test module import
+uv run python -c "import mcp_postgres; print('✓ Package installed correctly')"
+```
+
+#### For Installed Package
+```bash
+# Set up test database connection
+export DATABASE_URL="postgresql://user:pass@localhost:5432/testdb"
+
+# Test server startup
+mcp-postgres --help
+
+# Test with actual database connection
+mcp-postgres --dev
+
+# Test module import
+python -c "import mcp_postgres; print('✓ Package installed correctly')"
+```
+
+## Installation Troubleshooting
+
+### Common Issues with Cloned Project
+
+**Issue**: `ModuleNotFoundError: No module named 'mcp_postgres'`
+```bash
+# Solution: Install in development mode
+uv pip install -e .
+```
+
+**Issue**: `uv: command not found`
+```bash
+# Solution: Install uv first
+pip install uv
+# Or follow installation guide: https://docs.astral.sh/uv/getting-started/installation/
+```
+
+**Issue**: Virtual environment not activated
+```bash
+# Solution: Use uv run or activate manually
+uv run python -m mcp_postgres
+# Or activate: source .venv/bin/activate (Linux/macOS) or .venv\Scripts\activate (Windows)
+```
+
+### Common Issues with Installed Package
+
+**Issue**: `mcp-postgres: command not found`
+```bash
+# Solution: Use Python module instead
+python -m mcp_postgres
+```
+
+**Issue**: Package not found during installation
+```bash
+# Solution: Install from local source
+pip install -e /path/to/mcp-postgres
+```
+
+### Claude Desktop Configuration Issues
+
+**Issue**: Server fails to start in Claude Desktop
+- Check that the command path is correct and absolute
+- Verify that the Python executable exists
+- Ensure DATABASE_URL is properly formatted
+- Check Claude Desktop logs for specific error messages
+
+**Windows Path Example**:
+```json
+"command": "C:/Users/USERNAME/path/to/mcp-postgres/.venv/Scripts/python.exe"
+```
+
+**macOS/Linux Path Example**:
+```json
+"command": "/Users/username/path/to/mcp-postgres/.venv/bin/python"
 ```
 
 ## Contributing

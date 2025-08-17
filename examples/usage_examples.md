@@ -14,20 +14,36 @@ LOG_LEVEL="INFO"
 
 ### 2. Start the Server
 
+#### From Cloned Project
 ```bash
-# Using uv
+# Using uv (recommended for development)
 uv run python -m mcp_postgres
 
-# Using installed package
-mcp-postgres
+# Using virtual environment Python directly
+.venv/Scripts/python.exe -m mcp_postgres  # Windows
+.venv/bin/python -m mcp_postgres          # macOS/Linux
 
 # Development mode
 uv run python -m mcp_postgres --dev
 ```
 
+#### From Installed Package
+```bash
+# Using the installed script
+mcp-postgres
+
+# Using Python module
+python -m mcp_postgres
+
+# Development mode
+mcp-postgres --dev
+```
+
 ## Claude Desktop Integration
 
 ### Configuration
+
+#### For Cloned Project
 
 Add to your Claude Desktop config file:
 
@@ -35,9 +51,24 @@ Add to your Claude Desktop config file:
 {
   "mcpServers": {
     "postgres": {
-      "command": "uv",
-      "args": ["run", "python", "-m", "mcp_postgres"],
-      "cwd": "/path/to/mcp-postgres",
+      "command": "C:/Users/USERNAME/path/to/mcp-postgres/.venv/Scripts/python.exe",
+      "args": ["-m", "mcp_postgres"],
+      "env": {
+        "DATABASE_URL": "postgresql://user:pass@localhost:5432/mydb",
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}
+```
+
+#### For Installed Package
+
+```json
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "mcp-postgres",
       "env": {
         "DATABASE_URL": "postgresql://user:pass@localhost:5432/mydb",
         "LOG_LEVEL": "INFO"
@@ -100,14 +131,26 @@ from mcp.client.stdio import stdio_client
 
 async def main():
     # Configure server parameters
+
+    # For cloned project (using virtual environment)
     server_params = StdioServerParameters(
-        command="python",
+        command="/path/to/mcp-postgres/.venv/Scripts/python.exe",  # Windows
+        # command="/path/to/mcp-postgres/.venv/bin/python",       # macOS/Linux
         args=["-m", "mcp_postgres"],
         env={
             "DATABASE_URL": "postgresql://user:pass@localhost:5432/db",
             "LOG_LEVEL": "DEBUG"
         }
     )
+
+    # For installed package
+    # server_params = StdioServerParameters(
+    #     command="mcp-postgres",
+    #     env={
+    #         "DATABASE_URL": "postgresql://user:pass@localhost:5432/db",
+    #         "LOG_LEVEL": "DEBUG"
+    #     }
+    # )
 
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:

@@ -172,6 +172,26 @@ Add to your Claude Desktop configuration:
 **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 **Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
 
+#### For Cloned Project (Development)
+
+**Recommended approach (using virtual environment Python directly):**
+```json
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "C:/Users/USERNAME/path/to/mcp-postgres/.venv/Scripts/python.exe",
+      "args": ["-m", "mcp_postgres"],
+      "env": {
+        "DATABASE_URL": "postgresql://user:pass@localhost:5432/mydb",
+        "LOG_LEVEL": "INFO",
+        "MAX_RESULT_ROWS": "1000"
+      }
+    }
+  }
+}
+```
+
+**Alternative using uv (if uv is in PATH):**
 ```json
 {
   "mcpServers": {
@@ -189,17 +209,35 @@ Add to your Claude Desktop configuration:
 }
 ```
 
-### Using Installed Package
+#### For Installed Package
 
-If you've installed mcp-postgres as a package:
-
+**Using the installed script:**
 ```json
 {
   "mcpServers": {
     "postgres": {
       "command": "mcp-postgres",
       "env": {
-        "DATABASE_URL": "postgresql://user:pass@localhost:5432/mydb"
+        "DATABASE_URL": "postgresql://user:pass@localhost:5432/mydb",
+        "LOG_LEVEL": "INFO",
+        "MAX_RESULT_ROWS": "1000"
+      }
+    }
+  }
+}
+```
+
+**Using Python module:**
+```json
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "python",
+      "args": ["-m", "mcp_postgres"],
+      "env": {
+        "DATABASE_URL": "postgresql://user:pass@localhost:5432/mydb",
+        "LOG_LEVEL": "INFO",
+        "MAX_RESULT_ROWS": "1000"
       }
     }
   }
@@ -208,19 +246,52 @@ If you've installed mcp-postgres as a package:
 
 ### Development Configuration
 
-For development with auto-reload:
+#### For Cloned Project
 
+**Using virtual environment Python:**
+```json
+{
+  "mcpServers": {
+    "postgres-dev": {
+      "command": "C:/Users/USERNAME/path/to/mcp-postgres/.venv/Scripts/python.exe",
+      "args": ["-m", "mcp_postgres", "--dev"],
+      "env": {
+        "DATABASE_URL": "postgresql://postgres:password@localhost:5432/dev_db",
+        "LOG_LEVEL": "DEBUG"
+      }
+    }
+  }
+}
+```
+
+**Using uv:**
 ```json
 {
   "mcpServers": {
     "postgres-dev": {
       "command": "uv",
-      "args": ["run", "python", "-m", "mcp_postgres"],
+      "args": ["run", "python", "-m", "mcp_postgres", "--dev"],
       "cwd": "/path/to/mcp-postgres",
       "env": {
         "DATABASE_URL": "postgresql://postgres:password@localhost:5432/dev_db",
-        "LOG_LEVEL": "DEBUG",
-        "DEV_MODE": "true"
+        "LOG_LEVEL": "DEBUG"
+      }
+    }
+  }
+}
+```
+
+#### For Installed Package
+
+```json
+{
+  "mcpServers": {
+    "postgres-dev": {
+      "command": "mcp-postgres",
+      "args": ["--dev"],
+      "env": {
+        "DATABASE_URL": "postgresql://postgres:password@localhost:5432/dev_db",
+        "LOG_LEVEL": "DEBUG"
       }
     }
   }
