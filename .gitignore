@@ -49,6 +49,7 @@ htmlcov/
 # Project specific
 .kiro
 .windsurf
+validation/
 
 # Database
 *.sqlite3
