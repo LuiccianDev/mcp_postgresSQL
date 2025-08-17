@@ -5,7 +5,7 @@ description = "Model Context Protocol server for PostgreSQL database interaction
 readme = "README.md"
 requires-python = ">=3.13"
 authors = [
-    {name = "MCP Postgres Team"}
+    {name = "LuiccianDev", email = "LuiccianDev@gmail.com"}
 ]
 keywords = ["mcp", "postgresql", "database", "ai", "llm"]
 classifiers = [
@@ -17,6 +17,13 @@ classifiers = [
     "Topic :: Database",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
+
+[project.urls]
+Homepage = "https://github.com/LuiccianDev"
+Repository = "https://github.com/LuiccianDev/mcp_postgreSQL"
+Documentation = "https://github.com/LuiccianDev/mcp_postgreSQL/blob/master/README.md"
+issues = "https://github.com/LuiccianDev/mcp_postgreSQL/issues"
+
 dependencies = [
     "asyncpg>=0.30.0",
     "mcp[cli]>=1.13.0",
