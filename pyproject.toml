@@ -1,12 +1,13 @@
 [project]
 name = "mcp-postgres"
-version = "0.1.0"
+version = "0.1.1"
 description = "Model Context Protocol server for PostgreSQL database interactions with 50+ specialized tools"
 readme = "README.md"
 requires-python = ">=3.13"
 authors = [
     {name = "LuiccianDev", email = "LuiccianDev@gmail.com"}
 ]
+license = {text = "MIT"}
 keywords = ["mcp", "postgresql", "database", "ai", "llm"]
 classifiers = [
     "Development Status :: 4 - Beta",
