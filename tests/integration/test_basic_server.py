@@ -43,7 +43,7 @@ async def test_server_can_start():
                     mock_run.return_value = None
 
                     # Import and run main
-                    from src.mcp_postgres.main import main
+                    from mcp_postgres.server import main
 
                     # Should complete without errors
                     await main()

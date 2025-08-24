@@ -8,7 +8,7 @@ import pytest
 import pytest_asyncio
 
 from src.mcp_postgres.core.connection import connection_manager
-from src.mcp_postgres.main import main
+from mcp_postgres.server import main
 from src.mcp_postgres.tools.register_tools import TOOL_REGISTRY, get_tool_discovery_info
 
 
@@ -188,7 +188,7 @@ class TestMCPServerIntegration:
     @pytest.mark.asyncio
     async def test_server_shutdown_handling(self, mock_connection_manager):
         """Test server shutdown handling."""
-        from src.mcp_postgres.main import shutdown_handler
+        from mcp_postgres.server import shutdown_handler
 
         mock_server = AsyncMock()
 

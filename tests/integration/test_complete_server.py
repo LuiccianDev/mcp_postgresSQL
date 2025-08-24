@@ -47,7 +47,7 @@ async def test_complete_server_integration():
                     mock_run.side_effect = mock_run_func
 
                     # Import and test main function
-                    from src.mcp_postgres.main import main
+                    from mcp_postgres.server import main
 
                     # Should complete without errors
                     await main()

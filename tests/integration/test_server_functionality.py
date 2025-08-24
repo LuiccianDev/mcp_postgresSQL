@@ -203,7 +203,7 @@ class TestServerFunctionality:
         """Test the server initialization sequence with mocked dependencies."""
         from mcp.server import Server
 
-        from src.mcp_postgres.main import setup_logging
+        from mcp_postgres.server import setup_logging
 
         # Test logging setup
         setup_logging()
