@@ -7,11 +7,13 @@ This document provides comprehensive configuration options for the MCP Postgres 
 ### Database Connection (Required)
 
 #### Option 1: Single DATABASE_URL
+
 ```bash
 DATABASE_URL="postgresql://username:password@host:port/database"
 ```
 
 #### Option 2: Individual Components
+
 ```bash
 POSTGRES_HOST="localhost"
 POSTGRES_PORT="5432"
@@ -175,6 +177,7 @@ Add to your Claude Desktop configuration:
 #### For Cloned Project (Development)
 
 **Recommended approach (using virtual environment Python directly):**
+
 ```json
 {
   "mcpServers": {
@@ -192,6 +195,7 @@ Add to your Claude Desktop configuration:
 ```
 
 **Alternative using uv (if uv is in PATH):**
+
 ```json
 {
   "mcpServers": {
@@ -212,6 +216,7 @@ Add to your Claude Desktop configuration:
 #### For Installed Package
 
 **Using the installed script:**
+
 ```json
 {
   "mcpServers": {
@@ -228,6 +233,7 @@ Add to your Claude Desktop configuration:
 ```
 
 **Using Python module:**
+
 ```json
 {
   "mcpServers": {
@@ -249,6 +255,7 @@ Add to your Claude Desktop configuration:
 #### For Cloned Project
 
 **Using virtual environment Python:**
+
 ```json
 {
   "mcpServers": {
@@ -265,6 +272,7 @@ Add to your Claude Desktop configuration:
 ```
 
 **Using uv:**
+
 ```json
 {
   "mcpServers": {
@@ -281,7 +289,7 @@ Add to your Claude Desktop configuration:
 }
 ```
 
-#### For Installed Package
+#### For Installed Package Development
 
 ```json
 {

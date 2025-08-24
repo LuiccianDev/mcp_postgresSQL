@@ -106,7 +106,7 @@ python -m mcp_postgres --dev
 
 ## Project Structure
 
-```
+```text
 src/mcp_postgres/
 ├── __init__.py
 ├── __main__.py               # Module entry point
@@ -276,7 +276,7 @@ async def test_my_new_tool():
 
 ### Test Structure
 
-```
+```text
 tests/
 ├── unit/
 │   ├── test_query_tools.py

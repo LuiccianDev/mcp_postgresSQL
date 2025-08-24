@@ -9,6 +9,12 @@
         "**/.venv/**": true,
         "**/.mypy_cache/**":true,
         "**/.ruff_cache/**":true,
-        "**/.pytest_cache/**":true
-    }
+        "**/.pytest_cache/**":true,
+        "**/.kiro/**":false
+    },
+    "markdownlint.config": {
+        "default": true,
+        "MD033": false,
+        "MD041": false
+}
 }

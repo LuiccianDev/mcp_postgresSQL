@@ -7,6 +7,7 @@ This document provides practical examples of using the MCP Postgres server with 
 ### 1. Environment Configuration
 
 Create a `.env` file:
+
 ```bash
 DATABASE_URL="postgresql://postgres:password@localhost:5432/myapp"
 LOG_LEVEL="INFO"
@@ -15,6 +16,7 @@ LOG_LEVEL="INFO"
 ### 2. Start the Server
 
 #### From Cloned Project
+
 ```bash
 # Using uv (recommended for development)
 uv run python -m mcp_postgres
@@ -28,6 +30,7 @@ uv run python -m mcp_postgres --dev
 ```
 
 #### From Installed Package
+
 ```bash
 # Using the installed script
 mcp-postgres
@@ -115,6 +118,7 @@ Add to your Claude Desktop config file:
 **Claude**: I'll query for users created in the last 30 days.
 
 *Uses `execute_query` tool with:*
+
 ```sql
 SELECT id, name, email, created_at
 FROM users
