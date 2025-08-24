@@ -4,14 +4,14 @@ import logging
 import time
 from typing import Any
 
-from ..core.connection import connection_manager
-from ..core.security import sanitize_parameters, validate_query_permissions
-from ..utils.exceptions import (
+from mcp_postgres.core.connection import connection_manager
+from mcp_postgres.core.security import sanitize_parameters, validate_query_permissions
+from mcp_postgres.utils.exceptions import (
     SecurityError,
     ValidationError,
     handle_postgres_error,
 )
-from ..utils.formatters import (
+from mcp_postgres.utils.formatters import (
     format_error_response,
     format_success_response,
     serialize_value,

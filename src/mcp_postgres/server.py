@@ -9,12 +9,12 @@ from typing import Any
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 
-from .config.database import database_config, validate_database_config
-from .config.settings import validate_environment
-from .core.connection import connection_manager
-from .tools.register_tools import register_all_tools
-from .utils.error_handler import error_handler
-from .utils.logging import get_logger, setup_enhanced_logging
+from mcp_postgres.config.database import database_config, validate_database_config
+from mcp_postgres.config.settings import validate_environment
+from mcp_postgres.core.connection import connection_manager
+from mcp_postgres.tools.register_tools import register_all_tools
+from mcp_postgres.utils.error_handler import error_handler
+from mcp_postgres.utils.logging import get_logger, setup_enhanced_logging
 
 
 def setup_logging() -> None:

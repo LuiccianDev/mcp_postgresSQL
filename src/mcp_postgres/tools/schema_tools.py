@@ -7,17 +7,17 @@ indexes, constraints, views, functions, triggers, and sequences.
 import logging
 from typing import Any
 
-from ..core.connection import connection_manager
-from ..utils.exceptions import (
+from mcp_postgres.core.connection import connection_manager
+from mcp_postgres.utils.exceptions import (
     MCPPostgresError,
     TableNotFoundError,
     handle_postgres_error,
 )
-from ..utils.formatters import (
+from mcp_postgres.utils.formatters import (
     format_table_info,
     format_table_list,
 )
-from ..utils.validators import validate_table_name
+from mcp_postgres.utils.validators import validate_table_name
 
 
 logger = logging.getLogger(__name__)

@@ -3,19 +3,19 @@
 import time
 from typing import Any, Literal
 
-from ..core.connection import connection_manager
-from ..core.security import sanitize_parameters, validate_query_permissions
-from ..utils.error_handler import handle_tool_errors
-from ..utils.exceptions import (
+from mcp_postgres.core.connection import connection_manager
+from mcp_postgres.core.security import sanitize_parameters, validate_query_permissions
+from mcp_postgres.utils.error_handler import handle_tool_errors
+from mcp_postgres.utils.exceptions import (
     SecurityError,
     ValidationError,
 )
-from ..utils.formatters import (
+from mcp_postgres.utils.formatters import (
     format_query_result,
     format_success_response,
     serialize_value,
 )
-from ..utils.logging import LogContext, PerformanceMetrics, get_logger
+from mcp_postgres.utils.logging import LogContext, PerformanceMetrics, get_logger
 
 
 logger = get_logger(__name__)

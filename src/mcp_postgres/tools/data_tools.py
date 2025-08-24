@@ -4,23 +4,23 @@ import logging
 import time
 from typing import Any, Literal
 
-from ..core.connection import connection_manager
-from ..core.security import (
+from mcp_postgres.core.connection import connection_manager
+from mcp_postgres.core.security import (
     check_table_access,
     sanitize_parameters,
     validate_query_permissions,
 )
-from ..utils.exceptions import (
+from mcp_postgres.utils.exceptions import (
     SecurityError,
     ValidationError,
     handle_postgres_error,
 )
-from ..utils.formatters import (
+from mcp_postgres.utils.formatters import (
     format_error_response,
     format_success_response,
     serialize_value,
 )
-from ..utils.validators import validate_column_name, validate_table_name
+from mcp_postgres.utils.validators import validate_column_name, validate_table_name
 
 
 logger = logging.getLogger(__name__)

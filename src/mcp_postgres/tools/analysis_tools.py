@@ -3,13 +3,13 @@
 import logging
 from typing import Any
 
-from ..core.connection import connection_manager
-from ..utils.formatters import (
+from mcp_postgres.core.connection import connection_manager
+from mcp_postgres.utils.formatters import (
     format_analysis_result,
     format_error_response,
     serialize_value,
 )
-from ..utils.validators import (
+from mcp_postgres.utils.validators import (
     validate_column_name,
     validate_limit_offset,
     validate_table_name,

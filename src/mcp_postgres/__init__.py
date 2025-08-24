@@ -1,5 +1,5 @@
 """MCP Postgres Server - PostgreSQL database interaction tools for MCP."""
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __author__ = "LuiccianDev"
 __description__ = "Model Context Protocol server for PostgreSQL database operations"
