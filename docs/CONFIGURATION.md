@@ -306,6 +306,37 @@ Add to your Claude Desktop configuration:
 }
 ```
 
+#### For Installed Package DXT Desktop Claude
+
+```json
+{
+  "server": {
+    "type": "python",
+    "entry_point": "src/mcp_postgres/server.py",
+    "mcp_config": {
+      "command": "python",
+      "args": [
+        "${__dirname}/src/mcp_postgres/server.py"
+      ],
+      "env": {
+        "PYTHONPATH": "${__dirname}/src",
+        "DATABASE_URL": "${user_config.DATABASE_URL}"
+      }
+    }
+  },
+  "tools_generated": true,
+  "user_config": {
+    "DATABASE_URL": {
+      "type": "string",
+      "title": "Database url",
+      "description": "string crude postgres connection",
+      "required": true,
+      "sensitive": true
+    }
+  },
+}
+```
+
 ## Docker Configuration
 
 ### Docker Compose Example
