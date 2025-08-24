@@ -6,7 +6,7 @@ Este documento describe una estructura de directorios recomendada para organizar
 
 Se propone la siguiente organización dentro del directorio `src/mcp_postgres/`:
 
-```
+```text
 src/mcp_postgres/
 ├── __init__.py
 ├── main.py                    # Punto de entrada del servidor MCP
@@ -115,21 +115,25 @@ src/mcp_postgres/
 ## Principios de Diseño
 
 ### 🎯 Separación de Responsabilidades
+
 - **Tools**: Solo definen la interfaz MCP y validan parámetros
 - **Core**: Contiene la lógica de negocio y acceso a datos
 - **Utils**: Funciones puras y reutilizables
 
 ### 🔒 Seguridad por Capas
+
 1. **Validación de entrada** en utils/validators.py
 2. **Autorización** en core/security.py
 3. **Sanitización SQL** en core/connection.py
 
 ### 📊 Manejo de Errores Consistente
+
 - Excepciones personalizadas en utils/exceptions.py
 - Logging estructurado en toda la aplicación
 - Respuestas de error estandarizadas
 
 ### ⚡ Performance
+
 - Pool de conexiones optimizado
 - Queries preparados cuando sea posible
 - Timeouts configurables
@@ -162,6 +166,7 @@ graph TD
 ## Configuración y Deployment
 
 ### Variables de Entorno
+
 ```bash
 # Database
 POSTGRES_HOST=localhost
@@ -178,6 +183,7 @@ MCP_QUERY_TIMEOUT=30
 ```
 
 ### Instalación y Setup
+
 ```bash
 # Instalar dependencias
 uv sync
@@ -194,27 +200,32 @@ uv run python -m mcp_postgres
 ## Roadmap de Implementación
 
 ### Fase 1: Core Infrastructure
+
 - [ ] Configuración y settings
 - [ ] Pool de conexiones
 - [ ] Sistema de logging
 - [ ] Manejo de excepciones
 
 ### Fase 2: Tools Básicos
+
 - [ ] Query tools (3 herramientas)
 - [ ] Schema tools (8 herramientas)
 - [ ] Validadores básicos
 
 ### Fase 3: Tools Avanzados
+
 - [ ] Analysis tools (4 herramientas)
 - [ ] Data management tools (4 herramientas)
 - [ ] Performance tools (3 herramientas)
 
 ### Fase 4: Tools Especializados
+
 - [ ] Backup tools (3 herramientas)
 - [ ] Admin tools (4 herramientas)
 - [ ] Generation tools (3 herramientas)
 
 ### Fase 5: Testing y Optimización
+
 - [ ] Suite completa de tests
 - [ ] Optimización de performance
 - [ ] Documentación completa

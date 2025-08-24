@@ -10,7 +10,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-brightgreen)](https://modelcontextprotocol.io)
 
-
 </div>
 
 ## Features
@@ -37,6 +36,7 @@
 ### Option 1: Development Setup (Cloned Project)
 
 **Use this approach if you want to:**
+
 - Modify or contribute to the code
 - Use the latest development features
 - Debug or customize the server behavior
@@ -59,6 +59,7 @@ uv run pre-commit install
 ### Option 2: Package Installation
 
 **Use this approach if you want to:**
+
 - Simply use the server without modifications
 - Have a cleaner installation
 - Use a stable released version
@@ -109,16 +110,19 @@ QUERY_TIMEOUT="30"
 ### Database Connection Examples
 
 #### Local PostgreSQL
+
 ```bash
 DATABASE_URL="postgresql://postgres:password@localhost:5432/mydb"
 ```
 
 #### Remote PostgreSQL
+
 ```bash
 DATABASE_URL="postgresql://user:pass@remote-host:5432/production_db"
 ```
 
 #### PostgreSQL with SSL
+
 ```bash
 DATABASE_URL="postgresql://user:pass@host:5432/db?sslmode=require"
 ```
@@ -179,6 +183,7 @@ Add to your Claude Desktop configuration file:
 ```
 
 **Alternative using uv (if uv is in PATH):**
+
 ```json
 {
   "mcpServers": {
@@ -210,6 +215,7 @@ Add to your Claude Desktop configuration file:
 ```
 
 **Or using Python module:**
+
 ```json
 {
   "mcpServers": {
@@ -266,11 +272,13 @@ if __name__ == "__main__":
 The server provides 50+ tools organized into 10 modules:
 
 ### Query Tools (3 tools)
+
 - `execute_query`: Execute parameterized SQL queries safely
 - `execute_raw_query`: Execute raw SQL with safety warnings
 - `execute_transaction`: Execute multiple queries in a transaction
 
 ### Schema Tools (8 tools)
+
 - `list_tables`: List all tables with metadata
 - `describe_table`: Get detailed table structure
 - `list_indexes`: Show table indexes and performance info
@@ -281,44 +289,52 @@ The server provides 50+ tools organized into 10 modules:
 - `list_sequences`: Show sequence information
 
 ### Analysis Tools (4 tools)
+
 - `analyze_column`: Statistical analysis of column data
 - `find_duplicates`: Detect duplicate records
 - `profile_table`: Analyze data types and distributions
 - `analyze_correlations`: Calculate column relationships
 
 ### Data Tools (4 tools)
+
 - `insert_data`: Insert records with validation
 - `update_data`: Update records with conditions
 - `delete_data`: Delete records with safety checks
 - `bulk_insert`: Efficient bulk data insertion
 
 ### Relation Tools (3 tools)
+
 - `get_foreign_keys`: Map foreign key relationships
 - `get_table_relationships`: Analyze table connections
 - `validate_referential_integrity`: Check constraint violations
 
 ### Performance Tools (3 tools)
+
 - `analyze_query_performance`: Analyze execution plans
 - `find_slow_queries`: Identify performance bottlenecks
 - `get_table_stats`: Get storage and access statistics
 
 ### Backup Tools (3 tools)
+
 - `export_table_csv`: Export table data to CSV
 - `import_csv_data`: Import CSV data with validation
 - `backup_table`: Create complete table backups
 
 ### Admin Tools (4 tools)
+
 - `get_database_info`: Get database version and info
 - `monitor_connections`: Monitor active connections
 - `vacuum_table`: Perform table maintenance
 - `reindex_table`: Rebuild table indexes
 
 ### Validation Tools (3 tools)
+
 - `validate_constraints`: Check constraint violations
 - `validate_data_types`: Verify data type compliance
 - `check_data_integrity`: Comprehensive integrity checks
 
 ### Generation Tools (3 tools)
+
 - `generate_ddl`: Generate CREATE TABLE statements
 - `generate_insert_template`: Create INSERT templates
 - `generate_orm_model`: Generate ORM model classes
@@ -436,7 +452,7 @@ uv run pytest tests/unit/test_query_tools.py
 
 ### Project Structure
 
-```
+```text
 src/mcp_postgres/
 ├── __init__.py
 ├── main.py                    # MCP server entry point
@@ -466,12 +482,14 @@ src/mcp_postgres/
 ### Common Issues
 
 #### Connection Issues
+
 ```bash
 # Test database connection
 psql "postgresql://user:pass@host:port/db" -c "SELECT version();"
 ```
 
 #### Permission Issues
+
 ```bash
 # Grant necessary permissions
 GRANT CONNECT ON DATABASE mydb TO username;
@@ -479,7 +497,8 @@ GRANT USAGE ON SCHEMA public TO username;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO username;
 ```
 
-#### Environment Variables
+#### Checking Environment Variables
+
 ```bash
 # Check environment variables
 echo $DATABASE_URL
@@ -498,6 +517,7 @@ LOG_LEVEL=DEBUG uv run python -m mcp_postgres
 After installation, verify that everything is working correctly:
 
 ### Test Installation
+
 ```bash
 # Test module import
 uv run python -c "import mcp_postgres; print('✓ Package installed correctly')"
@@ -508,6 +528,7 @@ uv run mcp-postgres --version
 ```
 
 ### Test Development Tools
+
 ```bash
 # Test linting and formatting
 uv run ruff check src/
@@ -523,6 +544,7 @@ uv run pre-commit run --all-files
 ### Test MCP Server (requires database)
 
 #### For Cloned Project
+
 ```bash
 # Set up test database connection
 export DATABASE_URL="postgresql://user:pass@localhost:5432/testdb"
@@ -537,7 +559,8 @@ uv run python -m mcp_postgres --dev
 uv run python -c "import mcp_postgres; print('✓ Package installed correctly')"
 ```
 
-#### For Installed Package
+#### For Installed Package (Production Installation)
+
 ```bash
 # Set up test database connection
 export DATABASE_URL="postgresql://user:pass@localhost:5432/testdb"
@@ -557,12 +580,14 @@ python -c "import mcp_postgres; print('✓ Package installed correctly')"
 ### Common Issues with Cloned Project
 
 **Issue**: `ModuleNotFoundError: No module named 'mcp_postgres'`
+
 ```bash
 # Solution: Install in development mode
 uv pip install -e .
 ```
 
 **Issue**: `uv: command not found`
+
 ```bash
 # Solution: Install uv first
 pip install uv
@@ -570,6 +595,7 @@ pip install uv
 ```
 
 **Issue**: Virtual environment not activated
+
 ```bash
 # Solution: Use uv run or activate manually
 uv run python -m mcp_postgres
@@ -579,12 +605,14 @@ uv run python -m mcp_postgres
 ### Common Issues with Installed Package
 
 **Issue**: `mcp-postgres: command not found`
+
 ```bash
 # Solution: Use Python module instead
 python -m mcp_postgres
 ```
 
 **Issue**: Package not found during installation
+
 ```bash
 # Solution: Install from local source
 pip install -e /path/to/mcp-postgres
@@ -593,17 +621,20 @@ pip install -e /path/to/mcp-postgres
 ### Claude Desktop Configuration Issues
 
 **Issue**: Server fails to start in Claude Desktop
+
 - Check that the command path is correct and absolute
 - Verify that the Python executable exists
 - Ensure DATABASE_URL is properly formatted
 - Check Claude Desktop logs for specific error messages
 
 **Windows Path Example**:
+
 ```json
 "command": "C:/Users/USERNAME/path/to/mcp-postgres/.venv/Scripts/python.exe"
 ```
 
 **macOS/Linux Path Example**:
+
 ```json
 "command": "/Users/username/path/to/mcp-postgres/.venv/bin/python"
 ```
@@ -623,6 +654,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Support
 
 For issues and questions:
+
 - Create an issue on GitHub
 - Check the troubleshooting section
 - Review the MCP documentation
