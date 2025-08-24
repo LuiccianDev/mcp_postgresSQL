@@ -1,0 +1,145 @@
+# Python
+__pycache__/
+*.py[oc]
+*.so
+.Python
+*.pyd
+*.pyc
+*.pyo
+*.pdb
+*.pyw
+*.pyz
+*.pyx
+*.pyd
+
+# Build and distribution
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+*.manifest
+*.spec
+
+# Virtual Environment
+.venv
+venv/
+ENV/
+.env
+.env.local
+.env.*.local
+.env.example
+
+# IDE and Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-*
+*.code-workspace
+.project
+.pydevproject
+*.sublime-project
+*.sublime-workspace
+
+# Testing and coverage
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.tox/
+.nox/
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.mypy_cache/
+.ruff_cache/
+
+# Type checkers and linters
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+.ruff_cache/
+
+# Documentation
+docs/_build/
+/site
+
+# Database
+*.sqlite3
+*.sqlite3-journal
+*.db
+*.sql
+
+# Logs and local settings
+*.log
+local_settings.py
+
+# Project specific
+.kiro/
+tests/
+.windsurf/
+documents/
+GEMINI.md
+WARP.md
+
+# Configuration files
+pytest.ini
+.markdownlint.json
+.pre-commit-config.yaml
+ruff.toml
+mypy.ini
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
+
+# Development tools
+.ropeproject/
+.spyderproject
+.spyproject
+
+# Misc
+celerybeat-schedule
+*.sage.py
+cython_debug/
+
+docs/
+examples/
+mypy.ini
+ruff.toml
+ARCHITECTURE.md
+
+# Project specific (add any project-specific patterns below)

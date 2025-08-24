@@ -1,0 +1,40 @@
+{
+  "dxt_version": "0.1",
+  "name": "mcp_postgres",
+  "version": "0.1.1",
+  "description": "conection postgres",
+  "author": {
+    "name": "LuiccianDev",
+    "email": "LuiccianDev@gmil.com"
+  },
+  "server": {
+    "type": "python",
+    "entry_point": "src/mcp_postgres/server.py",
+    "mcp_config": {
+      "command": "python",
+      "args": [
+        "${__dirname}/src/mcp_postgres/server.py"
+      ],
+      "env": {
+        "PYTHONPATH": "${__dirname}/src",
+        "DATABASE_URL": "${user_config.DATABASE_URL}"
+      }
+    }
+  },
+  "tools_generated": true,
+  "user_config": {
+    "DATABASE_URL": {
+      "type": "string",
+      "title": "Database url",
+      "description": "string crude postgres connection",
+      "required": true,
+      "sensitive": true
+    }
+  },
+  "keywords": [
+    "mcp",
+    "postgres",
+    "ia"
+  ],
+  "license": "MIT"
+}
