@@ -1,5 +1,5 @@
 [project]
-name = "mcp-postgres"
+name = "mcp_postgres"
 version = "0.1.1"
 description = "Model Context Protocol server for PostgreSQL database interactions with 50+ specialized tools"
 readme = "README.md"

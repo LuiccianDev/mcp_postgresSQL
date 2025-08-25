@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>MCP Postgres</h1>
+  <h1>MCP PostgreSQL</h1>
 
   <p>
     <em>A comprehensive Model Context Protocol (MCP) server for PostgreSQL database interactions.</em>
@@ -12,26 +12,15 @@
 
 </div>
 
-## Features
-
-- **Query Execution**: Execute SQL queries with parameter binding and transaction support
-- **Schema Management**: Inspect database structure, tables, views, indexes, and constraints
-- **Data Analysis**: Statistical analysis, duplicate detection, and column profiling
-- **Data Management**: CRUD operations with bulk insert capabilities
-- **Performance Tools**: Query analysis, slow query detection, and table statistics
-- **Backup & Restore**: CSV export/import and table backup functionality
-- **Administration**: Database info, connection monitoring, vacuum, and reindexing
-- **Code Generation**: Generate SQL DDL, insert templates, and ORM model classes
-- **Validation Tools**: Data integrity checks and constraint validation
-- **Relation Tools**: Foreign key analysis and referential integrity
-
 ## Installation
 
 ### Prerequisites
 
-- Python 3.13 or higher
-- PostgreSQL database (local or remote)
-- `uv` package manager (recommended) or `pip`
+- **Python** 3.13 or higher
+- **PostgreSQL database** (local or remote)
+- **UV Package Manager**: [Install UV](https://docs.astral.sh/uv/getting-started/installation/) (recommended) or use pip
+- **Git**: For cloning the repository
+- **Desktop Extensions (DXT)**: for creating .dxt packages for Claude desktop [Install DXT](https://github.com/anthropics/dxt)
 
 ### Option 1: Development Setup (Cloned Project)
 
@@ -172,25 +161,8 @@ Add to your Claude Desktop configuration file:
 {
   "mcpServers": {
     "postgres": {
-      "command": "C:/path/to/mcp-postgres/.venv/Scripts/python.exe",
+      "command": "/path/to/repo/mcp-postgres/.venv/Scripts/python.exe",
       "args": ["-m", "mcp_postgres"],
-      "env": {
-        "DATABASE_URL": "postgresql://user:pass@localhost:5432/dbname"
-      }
-    }
-  }
-}
-```
-
-**Alternative using uv (if uv is in PATH):**
-
-```json
-{
-  "mcpServers": {
-    "postgres": {
-      "command": "uv",
-      "args": ["run", "python", "-m", "mcp_postgres"],
-      "cwd": "/path/to/mcp-postgres",
       "env": {
         "DATABASE_URL": "postgresql://user:pass@localhost:5432/dbname"
       }
@@ -205,7 +177,8 @@ Add to your Claude Desktop configuration file:
 {
   "mcpServers": {
     "postgres": {
-      "command": "mcp-postgres",
+      "command": "uv",
+      "args": ["run", "mcp_postgres"],
       "env": {
         "DATABASE_URL": "postgresql://user:pass@localhost:5432/dbname"
       }
@@ -214,214 +187,32 @@ Add to your Claude Desktop configuration file:
 }
 ```
 
-**Or using Python module:**
+#### DXT Package Deployment
 
-```json
-{
-  "mcpServers": {
-    "postgres": {
-      "command": "python",
-      "args": ["-m", "mcp_postgres"],
-      "env": {
-        "DATABASE_URL": "postgresql://user:pass@localhost:5432/dbname"
-      }
-    }
-  }
-}
-```
+**Best for**: Integrated DXT ecosystem users who want seamless configuration management.
 
-#### Using with other MCP clients
+1. **Package the project**:
 
-```python
-import asyncio
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+   ```bash
+   dxt pack
+   ```
 
-async def main():
-    server_params = StdioServerParameters(
-        command="python",
-        args=["-m", "mcp_postgres"],
-        env={"DATABASE_URL": "postgresql://user:pass@localhost:5432/db"}
-    )
+2. **Configuration**: The DXT package automatically handles dependencies and provides user-friendly configuration through the manifest.json:
+   - `MCP_ALLOWED_DIRECTORIES`: Base directory for file operations
 
-    async with stdio_client(server_params) as (read, write):
-        async with ClientSession(read, write) as session:
-            # Initialize the connection
-            await session.initialize()
+3. **Usage**: Once packaged, the tool integrates directly with DXT-compatible clients with automatic user configuration variable substitution.
 
-            # List available tools
-            tools = await session.list_tools()
-            print(f"Available tools: {len(tools.tools)}")
+4. **Server Configuration**: This project includes the [manifest.json](manifest.json) file for building the .dxt package.
 
-            # Execute a query
-            result = await session.call_tool(
-                "execute_query",
-                arguments={
-                    "query": "SELECT * FROM users WHERE age > $1",
-                    "parameters": [25]
-                }
-            )
-            print(result)
-
-if __name__ == "__main__":
-    asyncio.run(main())
-```
+For more details see [DXT Package Documentation](https://github.com/anthropics/dxt).
 
 ## Available Tools
 
-The server provides 50+ tools organized into 10 modules:
-
-### Query Tools (3 tools)
-
-- `execute_query`: Execute parameterized SQL queries safely
-- `execute_raw_query`: Execute raw SQL with safety warnings
-- `execute_transaction`: Execute multiple queries in a transaction
-
-### Schema Tools (8 tools)
-
-- `list_tables`: List all tables with metadata
-- `describe_table`: Get detailed table structure
-- `list_indexes`: Show table indexes and performance info
-- `list_constraints`: Display foreign keys and constraints
-- `list_views`: Show database views and definitions
-- `list_functions`: List stored procedures and functions
-- `list_triggers`: Display trigger definitions
-- `list_sequences`: Show sequence information
-
-### Analysis Tools (4 tools)
-
-- `analyze_column`: Statistical analysis of column data
-- `find_duplicates`: Detect duplicate records
-- `profile_table`: Analyze data types and distributions
-- `analyze_correlations`: Calculate column relationships
-
-### Data Tools (4 tools)
-
-- `insert_data`: Insert records with validation
-- `update_data`: Update records with conditions
-- `delete_data`: Delete records with safety checks
-- `bulk_insert`: Efficient bulk data insertion
-
-### Relation Tools (3 tools)
-
-- `get_foreign_keys`: Map foreign key relationships
-- `get_table_relationships`: Analyze table connections
-- `validate_referential_integrity`: Check constraint violations
-
-### Performance Tools (3 tools)
-
-- `analyze_query_performance`: Analyze execution plans
-- `find_slow_queries`: Identify performance bottlenecks
-- `get_table_stats`: Get storage and access statistics
-
-### Backup Tools (3 tools)
-
-- `export_table_csv`: Export table data to CSV
-- `import_csv_data`: Import CSV data with validation
-- `backup_table`: Create complete table backups
-
-### Admin Tools (4 tools)
-
-- `get_database_info`: Get database version and info
-- `monitor_connections`: Monitor active connections
-- `vacuum_table`: Perform table maintenance
-- `reindex_table`: Rebuild table indexes
-
-### Validation Tools (3 tools)
-
-- `validate_constraints`: Check constraint violations
-- `validate_data_types`: Verify data type compliance
-- `check_data_integrity`: Comprehensive integrity checks
-
-### Generation Tools (3 tools)
-
-- `generate_ddl`: Generate CREATE TABLE statements
-- `generate_insert_template`: Create INSERT templates
-- `generate_orm_model`: Generate ORM model classes
+The server provides tools organized into 10 modules:
 
 For detailed documentation of all MCP tools, please refer to the official documentation [TOOLS.md](TOOLS.md).
 
-## Example Usage
-
-### Basic Query Execution
-
-```python
-# Execute a parameterized query
-result = await session.call_tool(
-    "execute_query",
-    arguments={
-        "query": "SELECT name, email FROM users WHERE created_at > $1",
-        "parameters": ["2024-01-01"]
-    }
-)
-```
-
-### Schema Inspection
-
-```python
-# List all tables
-tables = await session.call_tool("list_tables")
-
-# Get detailed table structure
-table_info = await session.call_tool(
-    "describe_table",
-    arguments={"table_name": "users"}
-)
-```
-
-### Data Analysis
-
-```python
-# Analyze column statistics
-stats = await session.call_tool(
-    "analyze_column",
-    arguments={
-        "table_name": "sales",
-        "column_name": "amount"
-    }
-)
-
-# Find duplicate records
-duplicates = await session.call_tool(
-    "find_duplicates",
-    arguments={
-        "table_name": "customers",
-        "columns": ["email"]
-    }
-)
-```
-
-### Performance Analysis
-
-```python
-# Analyze query performance
-performance = await session.call_tool(
-    "analyze_query_performance",
-    arguments={
-        "query": "SELECT * FROM orders WHERE customer_id = 123"
-    }
-)
-
-# Get table statistics
-stats = await session.call_tool(
-    "get_table_stats",
-    arguments={"table_name": "orders"}
-)
-```
-
 ## Development
-
-### Setup Development Environment
-
-```bash
-# Clone and setup
-git clone <repository-url>
-cd mcp-postgres
-uv sync
-
-# Install pre-commit hooks
-uv run pre-commit install
-```
 
 ### Code Quality
 
@@ -450,17 +241,49 @@ uv run pytest --cov=src/mcp_postgres
 uv run pytest tests/unit/test_query_tools.py
 ```
 
-### Project Structure
+---
+
+## Project Structure
+
+The following structure facilitates scalability and maintainability. Each folder and file has a clear responsibility within the project.
 
 ```text
-src/mcp_postgres/
-├── __init__.py
-├── main.py                    # MCP server entry point
-├── config/                    # Configuration management
-├── core/                      # Core services (connection, security, context)
-├── tools/                     # Tool modules (10 modules, 50+ tools)
-└── utils/                     # Utilities (validators, formatters, exceptions)
+c:\Users\DAVID\Desktop\mcp_server_local\mcp-postgres\src\mcp_postgres\
+│
+├── __init__.py         # MCP Postgres package initializer
+├── main.py             # MCP server entry point
+│
+├── config\             # Configuration, environment variables, and secrets
+│   ├── env.py          # Loads and validates environment variables
+│   └── settings.py     # General server configuration
+│
+├── core\               # Core services: DB connection, security, context
+│   ├── db.py           # PostgreSQL pool connection and management
+│   ├── security.py     # Access validation and data protection
+│   └── context.py      # User and session context management
+│
+├── tools\              # MCP tool modules (10 modules, 50+ tools)
+│   ├── query_tools.py  # SQL query tools
+│   ├── schema_tools.py # Schema management tools
+│   └── ...             # Other tool modules
+│
+└── utils\              # General utilities: validators, formatters, exceptions
+    ├── validators.py   # Parameter and data validation
+    ├── formatters.py   # Result and error formatting
+    └── exceptions.py   # Custom exception handling
 ```
+
+| Absolute Path                                                         | Description                                                        |
+|-----------------------------------------------------------------------|--------------------------------------------------------------------|
+| `src\mcp_postgres\main.py`                                            | Main entry point for the MCP server                                |
+| `src\mcp_postgres\config\`                                            | Configuration, environment variables, and secrets management       |
+| `src\mcp_postgres\core\`                                              | Core services: DB connection, security, user context               |
+| `src\mcp_postgres\tools\`                                             | MCP tool modules for database operations                           |
+| `src\mcp_postgres\utils\`                                             | General utilities and helpers for validation and error handling     |
+
+> **Tip:** Explore each folder to understand the responsibility of each module and make future contributions easier.
+
+---
 
 ## Security
 
@@ -575,86 +398,21 @@ mcp-postgres --dev
 python -c "import mcp_postgres; print('✓ Package installed correctly')"
 ```
 
-## Installation Troubleshooting
+## Contribution
 
-### Common Issues with Cloned Project
-
-**Issue**: `ModuleNotFoundError: No module named 'mcp_postgres'`
-
-```bash
-# Solution: Install in development mode
-uv pip install -e .
-```
-
-**Issue**: `uv: command not found`
-
-```bash
-# Solution: Install uv first
-pip install uv
-# Or follow installation guide: https://docs.astral.sh/uv/getting-started/installation/
-```
-
-**Issue**: Virtual environment not activated
-
-```bash
-# Solution: Use uv run or activate manually
-uv run python -m mcp_postgres
-# Or activate: source .venv/bin/activate (Linux/macOS) or .venv\Scripts\activate (Windows)
-```
-
-### Common Issues with Installed Package
-
-**Issue**: `mcp-postgres: command not found`
-
-```bash
-# Solution: Use Python module instead
-python -m mcp_postgres
-```
-
-**Issue**: Package not found during installation
-
-```bash
-# Solution: Install from local source
-pip install -e /path/to/mcp-postgres
-```
-
-### Claude Desktop Configuration Issues
-
-**Issue**: Server fails to start in Claude Desktop
-
-- Check that the command path is correct and absolute
-- Verify that the Python executable exists
-- Ensure DATABASE_URL is properly formatted
-- Check Claude Desktop logs for specific error messages
-
-**Windows Path Example**:
-
-```json
-"command": "C:/Users/USERNAME/path/to/mcp-postgres/.venv/Scripts/python.exe"
-```
-
-**macOS/Linux Path Example**:
-
-```json
-"command": "/Users/username/path/to/mcp-postgres/.venv/bin/python"
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests and linting
-5. Submit a pull request
+Contributions are welcome. Please read the contribution guidelines before submitting pull requests.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Support
-
-For issues and questions:
-
-- Create an issue on GitHub
-- Check the troubleshooting section
-- Review the MCP documentation
+<div align="center">
+  <p><strong>MCP Postgres Server</strong></p>
+  <p>Empowering AI assistants with comprehensive Postgres database capabilities</p>
+  <p>
+    <a href="https://github.com/LuiccianDev/mcp_postgreSQL">🏠 GitHub</a> •
+    <a href="https://modelcontextprotocol.io">🔗 MCP Protocol</a> •
+    <a href="https://github.com/LuiccianDev/mcp_postgreSQL/blob/main/TOOLS.md">📚 Tool Documentation</a>
+  </p>
+  <p><em>Created with by LuiccianDev</em></p>
+</div>
