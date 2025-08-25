@@ -41,7 +41,7 @@ htmlcov/
 .pytest_cache/
 .tox/
 .nox/
-
+*.dxt
 # Linting and type checking
 .mypy_cache/
 .ruff_cache/

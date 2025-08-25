@@ -11,12 +11,11 @@
     "type": "python",
     "entry_point": "src/mcp_postgres/server.py",
     "mcp_config": {
-      "command": "python",
-      "args": [
-        "${__dirname}/src/mcp_postgres/server.py"
+      "command": "uv",
+      "args": ["--directory",
+        "${__dirname}","run","src/mcp_postgres/server.py"
       ],
       "env": {
-        "PYTHONPATH": "${__dirname}/src",
         "DATABASE_URL": "${user_config.DATABASE_URL}"
       }
     }
