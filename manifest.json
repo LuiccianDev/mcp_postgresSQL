@@ -13,7 +13,9 @@
     "mcp_config": {
       "command": "uv",
       "args": ["--directory",
-        "${__dirname}","run","src/mcp_postgres/server.py"
+        "${__dirname}",
+        "run",
+        "src/mcp_postgres/server.py"
       ],
       "env": {
         "DATABASE_URL": "${user_config.DATABASE_URL}"
